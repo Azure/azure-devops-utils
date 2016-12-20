@@ -11,10 +11,10 @@ SUBSCRIPTION_ID=$1
 #echo "  Background article: https://azure.microsoft.com/en-us/documentation/articles/resource-group-authenticate-service-principal"
 echo ""
 
-my_app_name_uuid=$(python -c 'import uuid; print str(uuid.uuid4())[:8]')
+my_app_name_uuid=$(python -c 'import uuid; print (str(uuid.uuid4())[:8])')
 MY_APP_NAME="app${my_app_name_uuid}"
 
-MY_APP_KEY=$(python -c 'import uuid; print uuid.uuid4().hex')
+MY_APP_KEY=$(python -c 'import uuid; print (uuid.uuid4().hex)')
 
 my_app_id_URI="${MY_APP_NAME}_id"
 
