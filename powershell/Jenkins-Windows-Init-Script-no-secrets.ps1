@@ -30,11 +30,20 @@ $destSource = "d:\java\slave.jar"
 $wc = New-Object System.Net.WebClient
 $wc.DownloadFile($slaveSource, $destSource)
 
-# execute slave
-Write-Output "Executing slave process "
+# execute agent
+Write-Output "Executing agent process "
 $java="d:\java\zulu1.7.0_51-7.3.0.4-win64\bin\java.exe"
 $jar="-jar"
 $jnlpUrl="-jnlpUrl"
 $secretFlag="-secret"
 $serverURL=$jenkinsserverurl+"computer/" + $vmname + "/slave-agent.jnlp"
-& $java $jar $destSource $secretFlag $secret $jnlpUrl $serverURL
+while ($true) {
+  try {
+    # Launch
+    & $java -jar $destSource $secretFlag  $secret $jnlpUrl $serverURL -noReconnect
+  }
+  catch [System.Exception] {
+    Write-Output $_.Exception.ToString()
+  }
+  Start-Sleep 10
+}
