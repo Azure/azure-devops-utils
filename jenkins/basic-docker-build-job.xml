@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.10">
+  <actions/>
+  <description>{insert-job-description}</description>
+  <displayName>{insert-job-display-name}</displayName>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>git_repo</name>
+          <description>Git repository from where we&apos;re going to checkout the code (master branch) and build a docker image.
+NB! The repository must contain a Dockerfile in the root</description>
+          <defaultValue>{insert-git-url}</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>docker_tag_prefix</name>
+          <description>The final tag will be in this format: &lt;prefix&gt;:&lt;build_number&gt;</description>
+          <defaultValue>{insert-container-tag-prefix}</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>registry_url</name>
+          <description>Container Registry URL</description>
+          <defaultValue>{insert-cr-url}</defaultValue>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>registry_credentials_id</name>
+          <description>The credentials id that points to the Container Registry credentials</description>
+          <defaultValue>{insert-docker-credentials}</defaultValue>
+        </hudson.model.StringParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+    <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+      <triggers/>
+    </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.27">
+    <script>
+    {insert-groovy-script}
+    </script>
+    <sandbox>true</sandbox>
+  </definition>
+  <triggers/>
+</flow-definition>
