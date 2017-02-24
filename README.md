@@ -47,7 +47,7 @@ The Jenkins Job that uses this groovy script must have these parameters defined:
 | Jenkins job parameters  | Description                                                                                                 |
 |-------------------------|-------------------------------------------------------------------------------------------------------------|
 | git_repo                | A public git repository that has a Dockerfile                                                               |
-| docker_tag_prefix       | The image tag prefix (the tag will be in this format: "<prefix>:build_number")                              |
+| docker_repository       | The container repository                                                                                    |
 | registry_url            | The Docker private container registry url                                                                   |
 | registry_credentials_id | The Jenkins credentials id that stores the user name and password for the Docker private container registry |
 
