@@ -15,7 +15,7 @@ if [ "$#" -lt 7 ]; then
     echo "                                 [opt: job short name]"
     echo "                                 [opt: job display name]"
     echo "                                 [opt: job description]"
-    echo "                                 [opt: container tag prefix]"
+    echo "                                 [opt: container repository]"
     exit 1
 fi
 jenkins_url=${1}
@@ -30,7 +30,7 @@ cr_credentials_description=${9}
 job_name=${10}
 job_display_name=${11}
 job_description=${12}
-container_tag_prefix=${13}
+container_repository_name=${13}
 
 if [ -z "$cr_credentials_id" ]
 then
@@ -50,20 +50,19 @@ then
 fi
 if [ -z "$job_description" ]
 then
-    job_description="A basic pipeline that builds a Docker container. The job expects a dockerfile inside the git repository"
+    job_description="A basic pipeline that builds a Docker container. The job expects a Dockerfile at the root of the git repository"
 fi
-if [ -z "$container_tag_prefix" ]
+if [ -z "$container_repository_name" ]
 then
-    container_tag_prefix="jenkins/myfirstapp"
+    container_repository_name="${USER}/myfirstapp"
 fi
 
 #download dependencies
-base_remote_jenkins_scripts="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/jenkins"
-base_remote_jenkins_groovy="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/groovy"
+base_remote_jenkins_scripts="https://raw.githubusercontent.com/Azure/azure-devops-utils/master"
 
-wget ${base_remote_jenkins_scripts}/basic-docker-build-job.xml -O job_template.xml
-wget ${base_remote_jenkins_scripts}/basic-user-pwd-credentials.xml -O credentials_template.xml
-wget ${base_remote_jenkins_groovy}/basic-docker-build.groovy -O job.groovy
+wget ${base_remote_jenkins_scripts}/jenkins/basic-docker-build-job.xml -O job_template.xml
+wget ${base_remote_jenkins_scripts}/jenkins/basic-user-pwd-credentials.xml -O credentials_template.xml
+wget ${base_remote_jenkins_scripts}/groovy/basic-docker-build.groovy -O job.groovy
 
 #prepare credentials.xml
 cat credentials_template.xml | sed -e "s|{insert-credentials-id}|${cr_credentials_id}|"\
@@ -79,7 +78,7 @@ cat job_template.xml | sed -e "s|{insert-job-display-name}|${job_display_name}|"
                            -e "s|{insert-git-url}|${git_url}|"\
                            -e "s|{insert-cr-url}|${cr_url}|"\
                            -e "s|{insert-docker-credentials}|${cr_credentials_id}|"\
-                           -e "s|{insert-container-tag-prefix}|${container_tag_prefix}|" > job1.xml
+                           -e "s|{insert-container-repository}|${container_repository_name}|" > job1.xml
 cat job1.xml | sed "/{insert-groovy-script}/r job.groovy" | sed "/{insert-groovy-script}/d" > job.xml
 rm job_template.xml
 rm job1.xml
@@ -87,8 +86,14 @@ rm job.groovy
 set +e
 
 function retry_until_successful {
+    counter=0
     ${@}
     while [ $? -ne 0 ]; do
+        if [[ "$counter" -gt 20 ]]; then
+            exit 1
+        else
+            let counter++
+        fi
         sleep 5
         ${@}
     done;

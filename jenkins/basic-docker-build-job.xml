@@ -14,20 +14,22 @@ NB! The repository must contain a Dockerfile in the root</description>
           <defaultValue>{insert-git-url}</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
-          <name>docker_tag_prefix</name>
-          <description>The final tag will be in this format: &lt;prefix&gt;:&lt;build_number&gt;</description>
-          <defaultValue>{insert-container-tag-prefix}</defaultValue>
+          <name>docker_repository</name>
+          <description>The docker repository</description>
+          <defaultValue>{insert-container-repository}</defaultValue>
         </hudson.model.StringParameterDefinition>
         <hudson.model.StringParameterDefinition>
           <name>registry_url</name>
           <description>Container Registry URL</description>
           <defaultValue>{insert-cr-url}</defaultValue>
         </hudson.model.StringParameterDefinition>
-        <hudson.model.StringParameterDefinition>
+        <com.cloudbees.plugins.credentials.CredentialsParameterDefinition plugin="credentials@2.1.12">
           <name>registry_credentials_id</name>
           <description>The credentials id that points to the Container Registry credentials</description>
           <defaultValue>{insert-docker-credentials}</defaultValue>
-        </hudson.model.StringParameterDefinition>
+          <credentialType>com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl</credentialType>
+          <required>true</required>
+        </com.cloudbees.plugins.credentials.CredentialsParameterDefinition>
       </parameterDefinitions>
     </hudson.model.ParametersDefinitionProperty>
     <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
