@@ -62,7 +62,7 @@ base_remote_jenkins_scripts="https://raw.githubusercontent.com/Azure/azure-devop
 
 wget ${base_remote_jenkins_scripts}/jenkins/basic-docker-build-job.xml -O job_template.xml
 wget ${base_remote_jenkins_scripts}/jenkins/basic-user-pwd-credentials.xml -O credentials_template.xml
-wget ${base_remote_jenkins_scripts}/groovy/basic-docker-build.groovy -O job.groovy
+wget ${base_remote_jenkins_scripts}/jenkins/basic-docker-build.groovy -O job.groovy
 
 #prepare credentials.xml
 cat credentials_template.xml | sed -e "s|{insert-credentials-id}|${cr_credentials_id}|"\

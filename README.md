@@ -38,10 +38,10 @@ Migrates an image from the classic image model to the new Azure Resource Manager
 | TargetVirtualPath    | Virtual path to put the blob in. If not specified, defaults to the virtual path of the source URI |
 | TargetBlobName       | Blob name to copy to.  If not specified, defaults to the blob name of the source URI              |
 
-## [Jenkins groovy scripts](groovy/)
-> [groovy/basic-docker-build.groovy](groovy/basic-docker-build.groovy)
+## [Jenkins groovy script to build and push a Docker container](jenkins/basic-docker-build.groovy)
+> [jenkins/basic-docker-build.groovy](jenkins/basic-docker-build.groovy)
 
-Sample Jenkins pipeline that clones a git repository, builds the docker image defined in the Docker file and pushes that image to a private container registry.
+Sample Jenkins pipeline that clones a git repository, builds the docker container defined in the Docker file and pushes that container to a private container registry.
 The Jenkins Job that uses this groovy script must have these parameters defined:
 
 | Jenkins job parameters  | Description                                                                                                 |
