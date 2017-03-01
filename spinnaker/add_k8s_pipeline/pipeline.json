@@ -63,7 +63,7 @@
                                 "registry": "REPLACE_REGISTRY",
                                 "repository": "REPLACE_REPOSITORY",
                                 "tag": null,
-                                "account": "REPLACE_DOCKER_ACCOUNT_NAME"
+                                "account": "REPLACE_ACCOUNT_NAME"
                             },
                             "requests": {
                                 "cpu": null,
@@ -268,7 +268,7 @@
         {
             "type": "docker",
             "tag": null,
-            "account": "REPLACE_DOCKER_ACCOUNT_NAME",
+            "account": "REPLACE_ACCOUNT_NAME",
             "repository": "REPLACE_REPOSITORY",
             "registry": "REPLACE_REGISTRY",
             "enabled": true,
