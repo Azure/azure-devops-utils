@@ -1,17 +1,48 @@
 #!/bin/bash
 
+function print_usage() {
+  cat <<EOF
+Command
+  $0 
+
+Arguments
+  --timeout|-t   : Timeout in seconds, defaulted to 120
+EOF
+}
+
+# Set defaults
+timeout=120
+
+while [[ $# > 0 ]]
+do
+  key="$1"
+  shift
+  case $key in
+    --timeout|-t)
+      timeout="$1"
+      shift
+      ;;
+    --help|-help|-h)
+      print_usage
+      exit 13
+      ;;
+    *)
+      echo "ERROR: Unknown argument '$key'" 1>&2
+      exit -1
+  esac
+done
+
 sudo restart spinnaker
 
-# Wait up to 120 seconds for Spinnaker services to be ready:
+# Wait for the following Spinnaker services to be ready:
 # Gate - port 8084
 # Clouddriver - port 7002
 # Front50 - port 8080
 # Orca - port 8083
 count=0
-timeout=120
 while !(nc -z localhost 8080) || !(nc -z localhost 8084) || !(nc -z localhost 7002) || !(nc -z localhost 8083); do
   if [ $count -gt $timeout ]; then
-    echo "Could not connect to Spinnaker." 1>&2
+    echo "Could not connect to Spinnaker in specified timeout of '$timeout' seconds." 1>&2
     exit 124 # same exit code used by 'timeout' function
   else
     sleep 1
