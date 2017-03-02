@@ -11,17 +11,17 @@ Arguments
   --repository|-rp         [Required]: Repository targeted by pipeline
   --port|-p                          : Port for loadbalancers used in pipeline, defaulted to '8000'
   --user_name|-un                    : User name for pipeline metadata, defaulted to '[anonymous]'
-  --user_email|-ue                   : User email for pipeline metadata
+  --user_email|-ue                   : User email for pipeline metadata, defaulted to 'anonymous@Fabrikam.com'
   --artifacts_location|-al           : Url used to reference other scripts/artifacts.
   --sas_token|-st                    : A sas token needed if the artifacts location is private.
 EOF
 }
 
-function throw_if_unset() {
+function throw_if_empty() {
   local name="$1"
   local value="$2"
   if [ -z "$value" ]; then
-    echo "Required parameter '$name' is not set." 1>&2
+    echo "Parameter '$name' cannot be empty." 1>&2
     print_usage
     exit -1
   fi
@@ -30,7 +30,7 @@ function throw_if_unset() {
 # Set defaults
 port="8000"
 user_name="[anonymous]"
-user_email=""
+user_email="anonymous@Fabrikam.com"
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
 
 while [[ $# > 0 ]]
@@ -84,9 +84,12 @@ do
   esac
 done
 
-throw_if_unset --account_name $account_name
-throw_if_unset --registry $registry
-throw_if_unset --repository $repository
+throw_if_empty --account_name $account_name
+throw_if_empty --registry $registry
+throw_if_empty --repository $repository
+throw_if_empty --port $port
+throw_if_empty --user_name $user_name
+throw_if_empty --user_email $user_email
 
 # Validate and parse repository
 if [[ "$repository" =~ ^([^[:space:]\/]+)\/([^[:space:]\/]+)$ ]]; then

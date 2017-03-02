@@ -19,7 +19,7 @@ This must be executed on a machine with a running Spinnaker instance.
 | --repository<br/>-rp | The repository, for example 'Fabrikam/app1'. Any new tag pushed to this repository will trigger the pipeline. |
 | --port<br/>-p | (optional) The port used when creating load balancers for the pipeline. The container deployed by your pipeline is expected to be listening on this port. The default is '8000'. |
 | --user_name<br/>-un | (optional) The user name for creating the pipeline. The default is '[anonymous]'. |
-| --user_email<br/>-ue | (optional) The user email for creating the pipeline. The default is an empty string. |
+| --user_email<br/>-ue | (optional) The user email for creating the pipeline. The default is 'anonymous@Fabrikam.com'. |
 | --artifacts_location<br/>-al | (optional) The url for referencing other scripts/artifacts. The default is this github repository. |
 | --sas_token<br/>-st | (optional) A sas token needed if the artifacts location is private. |
 
