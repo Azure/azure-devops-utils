@@ -17,11 +17,11 @@ Arguments
 EOF
 }
 
-function throw_if_unset() {
+function throw_if_empty() {
   local name="$1"
   local value="$2"
   if [ -z "$value" ]; then
-    echo "Required parameter '$name' is not set." 1>&2
+    echo "Parameter '$name' cannot be empty." 1>&2
     print_usage
     exit -1
   fi
@@ -81,11 +81,11 @@ do
   esac
 done
 
-throw_if_unset --storage_account_name $storage_account_name
-throw_if_unset --storage_account_key $storage_account_key
-throw_if_unset --registry $registry
-throw_if_unset --client_id $client_id
-throw_if_unset --client_key $client_key
+throw_if_empty --storage_account_name $storage_account_name
+throw_if_empty --storage_account_key $storage_account_key
+throw_if_empty --registry $registry
+throw_if_empty --client_id $client_id
+throw_if_empty --client_key $client_key
 
 spinnaker_config_dir="/opt/spinnaker/config/"
 spinnaker_config_file="${spinnaker_config_dir}spinnaker-local.yml"

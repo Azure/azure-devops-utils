@@ -15,11 +15,11 @@ NOTE: This script requires the 'azure' cli and assumes you have logged in and se
 EOF
 }
 
-function throw_if_unset() {
+function throw_if_empty() {
   local name="$1"
   local value="$2"
   if [ -z "$value" ]; then
-    echo "Required parameter '$name' is not set." 1>&2
+    echo "Parameter '$name' cannot be empty." 1>&2
     print_usage
     exit -1
   fi
@@ -56,10 +56,10 @@ do
   esac
 done
 
-throw_if_unset --user-name $admin_user_name
-throw_if_unset --resource_group $resource_group
-throw_if_unset --master_fqdn $master_fqdn
-throw_if_unset --master_count $master_count
+throw_if_empty --user-name $admin_user_name
+throw_if_empty --resource_group $resource_group
+throw_if_empty --master_fqdn $master_fqdn
+throw_if_empty --master_count $master_count
 
 destination_file="/home/spinnaker/.kube/config"
 
