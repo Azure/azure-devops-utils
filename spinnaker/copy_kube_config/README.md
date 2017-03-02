@@ -1,6 +1,6 @@
 # Copy kubeconfig file
 
-Progamatically copies a kubeconfig file from an Azure Container Service Kubernetes cluster to a Spinnaker machine.
+Programatically copies a kubeconfig file from an Azure Container Service Kubernetes cluster to a Spinnaker machine.
 
 >**Note:** This script is only intended for use when copying the kubeconfig programatically with a Service Principal (aka when you do not have access to the ssh private key). If you want to do this manually, you can simply use 'scp'.
 
@@ -14,8 +14,6 @@ This must be executed on a machine with an existing Spinnaker instance. The 'azu
 | --resource_group<br/>-rg | The resource group containing the Kubernetes cluster. |
 | --master_fqdn<br/>-mf | The FQDN for the master VMs in the Kubernetes cluster. |
 | --master_count<br/>-mc | The count of master VMs in the Kubernetes cluster. |
-| --artifacts_location<br/>-al | (optional) The url for referencing other scripts/artifacts. The default is this github repository. |
-| --sas_token<br/>-st | (optional) A sas token needed if the artifacts location is private. |
 
 ## Example usage
 ```bash

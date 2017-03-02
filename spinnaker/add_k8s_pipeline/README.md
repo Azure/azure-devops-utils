@@ -16,7 +16,7 @@ This must be executed on a machine with a running Spinnaker instance.
 |---|---|
 | --account_name<br/>-an | The Spinnaker account name for your registry |
 | --registry<br/>-rg | The Azure Container Registry url, for example 'sample-microsoft.azurecr.io'. |
-| --repository<br/>-rp | The repository, for example 'Farikam/app1'. Any new tag pushed to this repository will trigger the pipeline. |
+| --repository<br/>-rp | The repository, for example 'Fabrikam/app1'. Any new tag pushed to this repository will trigger the pipeline. |
 | --port<br/>-p | (optional) The port used when creating load balancers for the pipeline. The container deployed by your pipeline is expected to be listening on this port. The default is '8000'. |
 | --user_name<br/>-un | (optional) The user name for creating the pipeline. The default is '[anonymous]'. |
 | --user_email<br/>-ue | (optional) The user email for creating the pipeline. The default is an empty string. |

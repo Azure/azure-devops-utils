@@ -40,7 +40,7 @@ azure login --service-principal -u $client_id -p $client_key --tenant $tenant_id
 azure account set $subscription_id
 
 # Copy kube config to this VM
-curl --silent "${artifacts_location}spinnaker/copy_kube_config/copy_kube_config.sh${artifacts_location_sas_token}" | sudo bash -s -- -un "$admin_user_name" -rg "$resource_group" -mf "$master_fqdn" -mc "$master_count" -al "$artifacts_location" -st "$artifacts_location_sas_token"
+curl --silent "${artifacts_location}spinnaker/copy_kube_config/copy_kube_config.sh${artifacts_location_sas_token}" | sudo bash -s -- -un "$admin_user_name" -rg "$resource_group" -mf "$master_fqdn" -mc "$master_count"
 
 # If targeting docker, we have to explicitly add the repository to the config. For private registries, 
 # there's no need because Spinnaker can dynamically retrieve the entire catalog of a registry.
@@ -56,18 +56,17 @@ curl --silent "${artifacts_location}spinnaker/configure_k8s/configure_k8s.sh${ar
 # Install and setup Kubernetes cli for admin user
 sudo curl -L -s -o $kubectl_file https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
 sudo chmod +x $kubectl_file
-mkdir /home/${admin_user_name}/.kube
+mkdir -p /home/${admin_user_name}/.kube
 sudo cp $spinnaker_kube_config_file /home/${admin_user_name}/.kube/config
 
 # Create pipeline if enabled
 if (( $include_kubernetes_pipeline )); then
     if [ "$pipeline_registry" == "$docker_hub_registry" ]; then
         docker_account_name="docker-hub-registry"
-        pipeline_registry_url="$docker_hub_registry"
     else
         docker_account_name="azure-container-registry"
-        pipeline_registry_url="$azure_container_registry"
+        pipeline_registry="$azure_container_registry"
     fi
 
-    curl --silent "${artifacts_location}spinnaker/add_k8s_pipeline/add_k8s_pipeline.sh${artifacts_location_sas_token}" | sudo bash -s -- -an "$docker_account_name" -rg "$pipeline_registry_url" -rp "$pipeline_repository" -p "$pipeline_port" -al "$artifacts_location" -st "$artifacts_location_sas_token"
+    curl --silent "${artifacts_location}spinnaker/add_k8s_pipeline/add_k8s_pipeline.sh${artifacts_location_sas_token}" | sudo bash -s -- -an "$docker_account_name" -rg "$pipeline_registry" -rp "$pipeline_repository" -p "$pipeline_port" -al "$artifacts_location" -st "$artifacts_location_sas_token"
 fi

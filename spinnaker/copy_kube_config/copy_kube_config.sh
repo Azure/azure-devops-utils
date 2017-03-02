@@ -8,10 +8,8 @@ Command
 Arguments
   --user_name|-un          [Required]: User name for Kubernetes cluster
   --resource_group|-rg     [Required]: Resource group containing Kubernetes cluster
-  --master_fqdn|-mf        [Required]: Master FQDN or IP Address of Kubernetes master VMs
+  --master_fqdn|-mf        [Required]: Master FQDN of Kubernetes master VMs
   --master_count|-mc       [Required]: Count of Kubernetes master VMs
-  --artifacts_location|-al           : Url used to reference other scripts/artifacts.
-  --sas_token|-st                    : A sas token needed if the artifacts location is private.
 
 NOTE: This script requires the 'azure' cli and assumes you have logged in and set the correct subscription
 EOF
@@ -26,9 +24,6 @@ function throw_if_unset() {
     exit -1
   fi
 }
-
-# Set defaults
-artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
 
 while [[ $# > 0 ]]
 do
@@ -51,14 +46,6 @@ do
       master_count="$1"
       shift
       ;;
-    --artifacts_location|-al)
-      artifacts_location="$1"
-      shift
-      ;;
-    --sas_token|-st)
-      artifacts_location_sas_token="$1"
-      shift
-      ;;
     --help|-help|-h)
       print_usage
       exit 13
@@ -77,8 +64,18 @@ throw_if_unset --master_count $master_count
 destination_file="/home/spinnaker/.kube/config"
 
 # Get the unique suffix used for kubernetes vms
-kubernetes_suffix=$(azure group deployment list $resource_group --json | grep -A 2 'nameSuffix\|masterFQDN' | grep 'value' | \
-  grep -A 1 $master_fqdn | tail -n 1 | cut -d '"' -f 4)
+
+kubernetes_suffix=$(azure group deployment list $resource_group --json | python -c "
+import json, sys;
+data=json.load(sys.stdin);
+for deployment in data:
+  try:
+    if deployment['properties']['outputs']['masterFQDN']['value'] == '$master_fqdn':
+      print deployment['properties']['parameters']['nameSuffix']['value']
+      sys.exit(0)
+  except:
+    pass
+")
 
 # Setup temporary credentials to access kubernetes master vms
 temp_user_name=$(uuidgen | sed 's/-//g')
@@ -90,21 +87,19 @@ temp_pub_key=$(cat ${temp_key_path}.pub)
 for (( i=0; i<$master_count; i++ ))
 do
   master_vm="k8s-master-${kubernetes_suffix}-$i"
-  azure vm extension set $resource_group $master_vm CustomScript Microsoft.Azure.Extensions 2.0 --auto-upgrade-minor-version \
-    --public-config "{\"fileUris\": [\"${artifacts_location}spinnaker/copy_kube_config/add_temp_user.sh${artifacts_location_sas_token}\"], \"commandToExecute\": \"./add_temp_user.sh $admin_user_name $temp_user_name '$temp_pub_key'\"}"
+  azure vm extension set $resource_group $master_vm VMAccessForLinux Microsoft.OSTCExtensions 1.4 --private-config "{ \"username\": \"$temp_user_name\", \"ssh_key\": \"$temp_pub_key\" }"
 done
 
 # Copy kube config over from master kubernetes cluster and mark readable
-sudo mkdir /home/spinnaker/.kube
-sudo scp -o StrictHostKeyChecking=no -i $temp_key_path $temp_user_name@$master_fqdn:/home/$temp_user_name/.kube/config $destination_file
+sudo mkdir -p $(dirname "$destination_file")
+sudo sh -c "ssh -o StrictHostKeyChecking=no -i \"$temp_key_path\" $temp_user_name@$master_fqdn sudo cat /home/$admin_user_name/.kube/config > \"$destination_file\""
 sudo chmod +r $destination_file
 
 # Remove temporary credentials on every kubernetes master vm
 for (( i=0; i<$master_count; i++ ))
 do
   master_vm="k8s-master-${kubernetes_suffix}-$i"
-  azure vm extension set $resource_group $master_vm CustomScript Microsoft.Azure.Extensions 2.0 --auto-upgrade-minor-version \
-    --public-config "{\"fileUris\": [\"${artifacts_location}spinnaker/copy_kube_config/remove_temp_user.sh${artifacts_location_sas_token}\"], \"commandToExecute\": \"./remove_temp_user.sh $temp_user_name\"}"
+  azure vm extension set $resource_group $master_vm VMAccessForLinux Microsoft.OSTCExtensions 1.4 --private-config "{ \"remove_user\": \"$temp_user_name\" }"
 done
 
 # Delete temp key on spinnaker vm
