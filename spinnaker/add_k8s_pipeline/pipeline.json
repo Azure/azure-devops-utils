@@ -130,7 +130,7 @@
             "requisiteStageRefIds": [
                 "1"
             ],
-            "instructions": "Verify the dev server group looks good. Run `kubectl proxy --port 7777` and navigate to this url to test: http://localhost:7777/api/v1/proxy/namespaces/default/services/REPLACE_APP_NAME-dev:80/"
+            "instructions": "Verify the dev server group looks good. Run `kubectl proxy` and navigate to this url to test: http://localhost:8001/api/v1/proxy/namespaces/default/services/REPLACE_APP_NAME-dev:80/"
         },
         {
             "cloudProvider": "kubernetes",
