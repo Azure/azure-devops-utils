@@ -3,12 +3,12 @@
 #echo "Usage:
 #  1 bash create-service-principal.sh
 #  2 bash create-service-principal.sh <Subscription ID>
-# You need Azure CLI: https://docs.microsoft.com/en-us/azure/xplat-cli-install
+# You need Azure CLI: https://docs.microsoft.com/azure/xplat-cli-install
 
 SUBSCRIPTION_ID=$1
 
 #echo ""
-#echo "  Background article: https://azure.microsoft.com/en-us/documentation/articles/resource-group-authenticate-service-principal"
+#echo "  Background article: https://azure.microsoft.com/documentation/articles/resource-group-authenticate-service-principal"
 echo ""
 
 my_app_name_uuid=$(python -c 'import uuid; print (str(uuid.uuid4())[:8])')
