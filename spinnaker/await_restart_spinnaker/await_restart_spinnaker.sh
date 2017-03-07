@@ -32,7 +32,8 @@ do
   esac
 done
 
-sudo restart spinnaker
+# NOTE: The following command will start Spinnaker even if it's not running, whereas "sudo restart spinnaker" would fail in that case
+sudo service spinnaker restart
 
 # Wait for the following Spinnaker services to be ready:
 # Gate - port 8084
