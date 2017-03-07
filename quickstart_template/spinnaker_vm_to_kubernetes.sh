@@ -66,6 +66,25 @@ if (( $include_kubernetes_pipeline )); then
     else
         docker_account_name="azure-container-registry"
         pipeline_registry="$azure_container_registry"
+
+        # Install docker CLI
+        curl -sSL https://get.docker.com/ | sh
+        sudo gpasswd -a $admin_user_name docker
+
+        # Add (virtually) empty container to ACR to properly initialize Spinnaker. This fixes two bugs:
+        # 1. The pipeline isn't triggered on the first push to the ACR (according to the source code, Igor "avoids publishing an event if this account has no indexed images (protects against a flushed redis)")
+        # 2. Some dropdowns in the UI for the pipeline display a 'loading' symbol rather than the repository we configured
+        temp_dir=$(mktemp -d)
+        touch "$temp_dir/README"
+        echo "This container is intentionally empty and only used as a placeholder." >"$temp_dir/README"
+        touch "$temp_dir/Dockerfile"
+        echo -e "FROM scratch\nADD . README" >"$temp_dir/Dockerfile"
+        # We added the user to the docker group above, but that doesn't take effect until the next login so we still need to use sudo here
+        sudo docker login "$azure_container_registry" -u "$client_id" -p "$client_key"
+        sudo docker build $temp_dir --tag "$azure_container_registry/$pipeline_repository"
+        sudo docker push "$azure_container_registry/$pipeline_repository"
+        sudo docker rmi "$azure_container_registry/$pipeline_repository"
+        sudo docker logout
     fi
 
     curl --silent "${artifacts_location}spinnaker/add_k8s_pipeline/add_k8s_pipeline.sh${artifacts_location_sas_token}" | sudo bash -s -- -an "$docker_account_name" -rg "$pipeline_registry" -rp "$pipeline_repository" -p "$pipeline_port" -al "$artifacts_location" -st "$artifacts_location_sas_token"
