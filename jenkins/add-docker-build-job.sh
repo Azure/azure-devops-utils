@@ -1,90 +1,141 @@
 #!/bin/bash
-set -e
 
-if [ "$#" -lt 7 ]; then
-    echo ""
-    echo "Usage: ./add-docker-build-job.sh <jenkins url>"
-    echo "                                 <jenkins user>"
-    echo "                                 <jenkins password>"
-    echo "                                 <git url>"
-    echo "                                 <container registry url>"
-    echo "                                 <container registry user name>"
-    echo "                                 <container registry password>"
-    echo "                                 [opt: credentials id]"
-    echo "                                 [opt: credentials description]"
-    echo "                                 [opt: job short name]"
-    echo "                                 [opt: job display name]"
-    echo "                                 [opt: job description]"
-    echo "                                 [opt: container repository]"
-    exit 1
-fi
-jenkins_url=${1}
-jenkins_user=${2}
-jenkins_password=${3}
-git_url=${4}
-cr_url=${5}
-cr_user=${6}
-cr_password=${7}
-cr_credentials_id=${8}
-cr_credentials_description=${9}
-job_name=${10}
-job_display_name=${11}
-job_description=${12}
-container_repository_name=${13}
+function print_usage() {
+  cat <<EOF
+Command
+  $0
+Arguments
+  --jenkins_url|-j          [Required]: Jenkins URL
+  --jenkins_user_name|-ju   [Required]: Jenkins user name
+  --jenkins_password|-jp    [Required]: Jenkins password
+  --git_url|-g              [Required]: Git URL with a Dockerfile in it's root
+  --registry|-r             [Required]: Registry url targeted by the pipeline
+  --registry_user_name|-ru  [Required]: Registry user name
+  --registry_password|-rp   [Required]: Registry password
+  --repository|-rr                    : Repository targeted by the pipeline
+  --credentials_id|-ci                : Desired Jenkins credentials id
+  --credentials_desc|-cd              : Desired Jenkins credentials description
+  --job_short_name|-jsn               : Desired Jenkins job short name
+  --job_display_name|-jdn             : Desired Jenkins job display name
+  --job_description|-jd               : Desired Jenkins job description
+EOF
+}
 
-if [ -z "$cr_credentials_id" ]
-then
-    cr_credentials_id="docker_credentials"
-fi
-if [ -z "$cr_credentials_description" ]
-then
-    cr_credentials_description="Docker Container Registry Credentials"
-fi
-if [ -z "$job_name" ]
-then
-    job_name="basic-docker-build"
-fi
-if [ -z "$job_display_name" ]
-then
-    job_display_name="Basic Docker Build"
-fi
-if [ -z "$job_description" ]
-then
-    job_description="A basic pipeline that builds a Docker container. The job expects a Dockerfile at the root of the git repository"
-fi
-if [ -z "$container_repository_name" ]
-then
-    container_repository_name="${USER}/myfirstapp"
-fi
+function throw_if_empty() {
+  local name="$1"
+  local value="$2"
+  if [ -z "$value" ]; then
+    echo "Parameter '$name' cannot be empty." 1>&2
+    print_usage
+    exit -1
+  fi
+}
+
+#set defaults
+credentials_id="docker_credentials"
+credentials_desc="Docker Container Registry Credentials"
+job_short_name="basic-docker-build"
+job_display_name="Basic Docker Build"
+job_description="A basic pipeline that builds a Docker container. The job expects a Dockerfile at the root of the git repository"
+repository="${USER}/myfirstapp"
+
+
+while [[ $# > 0 ]]
+do
+  key="$1"
+  shift
+  case $key in
+    --jenkins_url|-j)
+      jenkins_url="$1"
+      shift
+      ;;
+    --jenkins_user_name|-ju)
+      jenkins_user_name="$1"
+      shift
+      ;;
+    --jenkins_password|-jp)
+      jenkins_password="$1"
+      shift
+      ;;
+    --git_url|-g)
+      git_url="$1"
+      shift
+      ;;
+    --registry|-r)
+      registry="$1"
+      shift
+      ;;
+    --registry_user_name|-ru)
+      registry_user_name="$1"
+      shift
+      ;;
+    --registry_password|-rp)
+      registry_password="$1"
+      shift
+      ;;
+    --repository|-rr)
+      repository="$1"
+      shift
+      ;;
+    --credentials_id|-ci)
+      credentials_id="$1"
+      shift
+      ;;
+    --credentials_desc|-cd)
+      credentials_desc="$1"
+      shift
+      ;;
+    --job_short_name|-jsn)
+      job_short_name="$1"
+      shift
+      ;;
+    --job_display_name|-jdn)
+      job_display_name="$1"
+      shift
+      ;;
+    --job_description|-jd)
+      job_description="$1"
+      shift
+      ;;
+    --help|-help|-h)
+      print_usage
+      exit 13
+      ;;
+    *)
+      echo "ERROR: Unknown argument '$key'" 1>&2
+      exit -1
+  esac
+done
+
+throw_if_empty --jenkins_url $jenkins_url
+throw_if_empty --jenkins_user_name $jenkins_user_name
+throw_if_empty --jenkins_password $jenkins_password
+throw_if_empty --git_url $git_url
+throw_if_empty --registry $registry
+throw_if_empty --registry_user_name $registry_user_name
+throw_if_empty --registry_password $registry_password
 
 #download dependencies
 base_remote_jenkins_scripts="https://raw.githubusercontent.com/Azure/azure-devops-utils/master"
 
-wget ${base_remote_jenkins_scripts}/jenkins/basic-docker-build-job.xml -O job_template.xml
-wget ${base_remote_jenkins_scripts}/jenkins/basic-user-pwd-credentials.xml -O credentials_template.xml
-wget ${base_remote_jenkins_scripts}/jenkins/basic-docker-build.groovy -O job.groovy
+job_xml=$(curl -s ${base_remote_jenkins_scripts}/jenkins/basic-docker-build-job.xml)
+credentials_xml=$(curl -s ${base_remote_jenkins_scripts}/jenkins/basic-user-pwd-credentials.xml)
 
 #prepare credentials.xml
-cat credentials_template.xml | sed -e "s|{insert-credentials-id}|${cr_credentials_id}|"\
-                                   -e "s|{insert-credentials-description}|${cr_credentials_description}|"\
-                                   -e "s|{insert-user-name}|${cr_user}|"\
-                                   -e "s|{insert-user-password}|${cr_password}|"\
-                                    > credentials.xml
-rm credentials_template.xml
+credentials_xml=${credentials_xml//'{insert-credentials-id}'/${credentials_id}}
+credentials_xml=${credentials_xml//'{insert-credentials-description}'/${credentials_desc}}
+credentials_xml=${credentials_xml//'{insert-user-name}'/${registry_user_name}}
+credentials_xml=${credentials_xml//'{insert-user-password}'/${registry_password}}
 
 #prepare job.xml
-cat job_template.xml | sed -e "s|{insert-job-display-name}|${job_display_name}|"\
-                           -e "s|{insert-job-description}|${job_description}|"\
-                           -e "s|{insert-git-url}|${git_url}|"\
-                           -e "s|{insert-cr-url}|${cr_url}|"\
-                           -e "s|{insert-docker-credentials}|${cr_credentials_id}|"\
-                           -e "s|{insert-container-repository}|${container_repository_name}|" > job1.xml
-cat job1.xml | sed "/{insert-groovy-script}/r job.groovy" | sed "/{insert-groovy-script}/d" > job.xml
-rm job_template.xml
-rm job1.xml
-rm job.groovy
-set +e
-
+job_xml=${job_xml//'{insert-job-display-name}'/${job_display_name}}
+job_xml=${job_xml//'{insert-job-description}'/${job_description}}
+job_xml=${job_xml//'{insert-git-url}'/${git_url}}
+job_xml=${job_xml//'{insert-cr-url}'/${registry}}
+job_xml=${job_xml//'{insert-docker-credentials}'/${credentials_id}}
+job_xml=${job_xml//'{insert-container-repository}'/${repository}}
+job_xml=${job_xml//'{insert-groovy-script}'/"$(curl -s ${base_remote_jenkins_scripts}/jenkins/basic-docker-build.groovy)"}
+echo "${job_xml}" > job.xml
 function retry_until_successful {
     counter=0
     ${@}
@@ -95,7 +146,7 @@ function retry_until_successful {
             let counter++
         fi
         sleep 5
-        ${@}
+        "${@}"
     done;
 }
 
@@ -103,20 +154,19 @@ function retry_until_successful {
 retry_until_successful wget ${jenkins_url}/jnlpJars/jenkins-cli.jar -O jenkins-cli.jar
 
 #install the required plugins
-retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "credentials" -deploy --username ${jenkins_user} --password ${jenkins_password}
-retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "workflow-cps" -deploy --username ${jenkins_user} --password ${jenkins_password}
-retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "workflow-job" -deploy --username ${jenkins_user} --password ${jenkins_password}
-retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "docker-workflow" -restart --username ${jenkins_user} --password ${jenkins_password}
+retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "credentials" -deploy --username ${jenkins_user_name} --password ${jenkins_password}
+retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "workflow-cps" -deploy --username ${jenkins_user_name} --password ${jenkins_password}
+retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "workflow-job" -deploy --username ${jenkins_user_name} --password ${jenkins_password}
+retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "docker-workflow" -restart --username ${jenkins_user_name} --password ${jenkins_password}
 
 #wait for instance to be back online
-retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} version --username ${jenkins_user} --password ${jenkins_password}
+retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} version --username ${jenkins_user_name} --password ${jenkins_password}
 
 #add user/pwd
-retry_until_successful cat credentials.xml | java -jar jenkins-cli.jar -s ${jenkins_url} create-credentials-by-xml SystemCredentialsProvider::SystemContextResolver::jenkins "(global)" --username ${jenkins_user} --password ${jenkins_password}
+retry_until_successful echo "${credentials_xml}" | java -jar jenkins-cli.jar -s ${jenkins_url} create-credentials-by-xml SystemCredentialsProvider::SystemContextResolver::jenkins "(global)" --username ${jenkins_user_name} --password ${jenkins_password}
 #add job
-retry_until_successful cat job.xml | java -jar jenkins-cli.jar -s ${jenkins_url} create-job ${job_name} --username ${jenkins_user} --password ${jenkins_password}
+retry_until_successful cat job.xml | java -jar jenkins-cli.jar -s ${jenkins_url} create-job ${job_short_name} --username ${jenkins_user_name} --password ${jenkins_password}
 
 #cleanup
-rm credentials.xml
 rm job.xml
 rm jenkins-cli.jar
