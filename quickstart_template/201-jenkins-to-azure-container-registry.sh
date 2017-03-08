@@ -92,15 +92,12 @@ sudo gpasswd -a jenkins docker
 skill -KILL -u jenkins
 sudo service jenkins restart
 
-if [[ "${include_docker_build_pipeline}" != "1" ]]
+if [[ "${include_docker_build_pipeline}" == "1" ]]
 then
-    echo "Skipping the pipeline inclusion"
-    exit 0
+    echo "Including the pipeline"
+
+    #get password and call build creation script
+    admin_password=`sudo cat /var/lib/jenkins/secrets/initialAdminPassword`
+
+    curl --silent "${base_remote_jenkins_scripts}/jenkins/add-docker-build-job.sh" | sudo bash -s -- -j "http://localhost:8080/" -ju "admin" -jp "${admin_password}" -g "${git_url}" -r "${registry}" -ru "${registry_user_name}"  -rp "${registry_password}" -rr "${vm_user_name}/myfirstapp"
 fi
-
-echo "Including the pipeline"
-
-#get password and call build creation script
-admin_password=`sudo cat /var/lib/jenkins/secrets/initialAdminPassword`
-
-curl --silent "${base_remote_jenkins_scripts}/jenkins/add-docker-build-job.sh" | sudo bash -s -- -j "http://localhost:8080/" -ju "admin" -jp "${admin_password}" -g "${git_url}" -r "${registry}" -ru "${registry_user_name}"  -rp "${registry_password}" -rr "${vm_user_name}/myfirstapp"
