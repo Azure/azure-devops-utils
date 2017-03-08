@@ -21,7 +21,7 @@ NB! The repository must contain a Dockerfile in the root</description>
         <hudson.model.StringParameterDefinition>
           <name>registry_url</name>
           <description>Container Registry URL</description>
-          <defaultValue>{insert-cr-url}</defaultValue>
+          <defaultValue>{insert-registry}</defaultValue>
         </hudson.model.StringParameterDefinition>
         <com.cloudbees.plugins.credentials.CredentialsParameterDefinition plugin="credentials@2.1.12">
           <name>registry_credentials_id</name>
