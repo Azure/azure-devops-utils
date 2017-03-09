@@ -18,6 +18,8 @@ Arguments
   --job_short_name|-jsn               : Desired Jenkins job short name
   --job_display_name|-jdn             : Desired Jenkins job display name
   --job_description|-jd               : Desired Jenkins job description
+  --artifacts_location|-al            : Url used to reference other scripts/artifacts.
+  --sas_token|-st                     : A sas token needed if the artifacts location is private.
 EOF
 }
 
@@ -38,7 +40,7 @@ job_short_name="basic-docker-build"
 job_display_name="Basic Docker Build"
 job_description="A basic pipeline that builds a Docker container. The job expects a Dockerfile at the root of the git repository"
 repository="${USER}/myfirstapp"
-
+artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
 
 while [[ $# > 0 ]]
 do
@@ -97,6 +99,14 @@ do
       job_description="$1"
       shift
       ;;
+    --artifacts_location|-al)
+      artifacts_location="$1"
+      shift
+      ;;
+    --sas_token|-st)
+      artifacts_location_sas_token="$1"
+      shift
+      ;;
     --help|-help|-h)
       print_usage
       exit 13
@@ -116,10 +126,8 @@ throw_if_empty --registry_user_name $registry_user_name
 throw_if_empty --registry_password $registry_password
 
 #download dependencies
-base_remote_jenkins_scripts="https://raw.githubusercontent.com/Azure/azure-devops-utils/master"
-
-job_xml=$(curl -s ${base_remote_jenkins_scripts}/jenkins/basic-docker-build-job.xml)
-credentials_xml=$(curl -s ${base_remote_jenkins_scripts}/jenkins/basic-user-pwd-credentials.xml)
+job_xml=$(curl -s ${artifacts_location}/jenkins/basic-docker-build-job.xml${artifacts_location_sas_token})
+credentials_xml=$(curl -s ${artifacts_location}/jenkins/basic-user-pwd-credentials.xml${artifacts_location_sas_token})
 
 #prepare credentials.xml
 credentials_xml=${credentials_xml//'{insert-credentials-id}'/${credentials_id}}
@@ -134,7 +142,7 @@ job_xml=${job_xml//'{insert-git-url}'/${git_url}}
 job_xml=${job_xml//'{insert-registry}'/${registry}}
 job_xml=${job_xml//'{insert-docker-credentials}'/${credentials_id}}
 job_xml=${job_xml//'{insert-container-repository}'/${repository}}
-job_xml=${job_xml//'{insert-groovy-script}'/"$(curl -s ${base_remote_jenkins_scripts}/jenkins/basic-docker-build.groovy)"}
+job_xml=${job_xml//'{insert-groovy-script}'/"$(curl -s ${artifacts_location}/jenkins/basic-docker-build.groovy${artifacts_location_sas_token})"}
 echo "${job_xml}" > job.xml
 function retry_until_successful {
     counter=0

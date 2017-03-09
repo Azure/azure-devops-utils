@@ -11,6 +11,8 @@ Arguments
   --registry|-r                         : Registry url targeted by the pipeline
   --registry_user_name|-ru              : Registry user name
   --registry_password|-rp               : Registry password
+  --artifacts_location|-al              : Url used to reference other scripts/artifacts.
+  --sas_token|-st                       : A sas token needed if the artifacts location is private.
 EOF
 }
 
@@ -26,7 +28,7 @@ function throw_if_empty() {
 
 #defaults
 include_docker_build_pipeline="0"
-base_remote_jenkins_scripts="https://raw.githubusercontent.com/Azure/azure-devops-utils/master"
+artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
 
 while [[ $# > 0 ]]
 do
@@ -55,6 +57,14 @@ do
       ;;
     --include_docker_build_pipeline|-i)
       include_docker_build_pipeline="$1"
+      shift
+      ;;
+    --artifacts_location|-al)
+      artifacts_location="$1"
+      shift
+      ;;
+    --sas_token|-st)
+      artifacts_location_sas_token="$1"
       shift
       ;;
     --help|-help|-h)
@@ -99,5 +109,5 @@ then
     #get password and call build creation script
     admin_password=`sudo cat /var/lib/jenkins/secrets/initialAdminPassword`
 
-    curl --silent "${base_remote_jenkins_scripts}/jenkins/add-docker-build-job.sh" | sudo bash -s -- -j "http://localhost:8080/" -ju "admin" -jp "${admin_password}" -g "${git_url}" -r "${registry}" -ru "${registry_user_name}"  -rp "${registry_password}" -rr "${vm_user_name}/myfirstapp"
+    curl --silent "${artifacts_location}/jenkins/add-docker-build-job.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "http://localhost:8080/" -ju "admin" -jp "${admin_password}" -g "${git_url}" -r "${registry}" -ru "${registry_user_name}"  -rp "${registry_password}" -rr "${vm_user_name}/myfirstapp"
 fi
