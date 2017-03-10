@@ -1,6 +1,6 @@
 # Install Spinnaker
 
-Install Spinnaker and automatically configure it to use Azure Storage (azs) as it's persistent storage.
+Install Spinnaker and automatically configure it to use Azure Storage (azs) as its persistent storage.
 
 ## Prerequisites
 This must be executed on a linux VM.
