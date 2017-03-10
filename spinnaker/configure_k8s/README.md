@@ -1,6 +1,6 @@
 # Configure Spinnaker for Kubernetes
 
-Automatically configure a spinnaker instance to target a Kubernetes cluster and to use an Azure storage account for Spinnaker's persistent storage. This script will restart spinnaker after it is done so that config changes take effect. The only remaining step is copy the kubeconfig file from your Kubernetes master vm to the Spinnaker VM.
+Automatically configure a spinnaker instance to target a Kubernetes cluster and Azure Container Registry. This script will restart clouddriver and igor so that config changes take effect. The only remaining step is copy the kubeconfig file from your Kubernetes master vm to the Spinnaker VM.
 
 ## Prerequisites
 This must be executed on a machine with an existing Spinnaker instance.
@@ -8,8 +8,6 @@ This must be executed on a machine with an existing Spinnaker instance.
 ## Arguments
 | Name | Description |
 |---|---|
-| --storage_account_name<br/>-san | The storage account name used for Spinnaker's persistent storage service (front50). |
-| --storage_account_key<br/>-sak | The storage account key used for Spinnaker's persistent storage service (front50). |
 | --registry<br/>-rg | The Azure Container Registry url, for example 'sample-microsoft.azurecr.io'. |
 | --client_id<br/>-ci | The Service Principal client id used to access your registry. |
 | --client_key<br/>-ck | The Service Principal client key used to access your registry. |
@@ -19,7 +17,7 @@ This must be executed on a machine with an existing Spinnaker instance.
 
 ## Example usage
 ```bash
-./configure_k8s.sh --storage_account_name "sample" --storage_account_key "password" --registry "sample-microsoft.azurecr.io" --client_id "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" --client-key "password"
+./configure_k8s.sh --registry "sample-microsoft.azurecr.io" --client_id "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" --client-key "password"
 ```
 
 ## Questions/Comments? azdevopspub@microsoft.com

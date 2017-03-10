@@ -6,8 +6,6 @@ Command
   $0 
 
 Arguments
-  --storage_account_name|-san [Required]: Storage account name used by front50
-  --storage_account_key|-sak  [Required]: Storage account key used by front50
   --registry|-rg              [Required]: Registry url
   --client_id|-ci             [Required]: Service principal client id used to access the registry
   --client_key|-ck            [Required]: Service principal client key used to access the registry
@@ -35,14 +33,6 @@ do
   key="$1"
   shift
   case $key in
-    --storage_account_name|-san)
-      storage_account_name="$1"
-      shift
-      ;;
-    --storage_account_key|-sak)
-      storage_account_key="$1"
-      shift
-      ;;
     --registry|-rg)
       registry="$1"
       # Remove http prefix and trailing slash from registry if they exist
@@ -76,26 +66,18 @@ do
       exit 13
       ;;
     *)
-      echo "ERROR: Unknown argument '$key'" 1>&2
+      echo "ERROR: Unknown argument '$key' to script '$0'" 1>&2
       exit -1
   esac
 done
 
-throw_if_empty --storage_account_name $storage_account_name
-throw_if_empty --storage_account_key $storage_account_key
 throw_if_empty --registry $registry
 throw_if_empty --client_id $client_id
 throw_if_empty --client_key $client_key
 
 spinnaker_config_dir="/opt/spinnaker/config/"
-spinnaker_config_file="${spinnaker_config_dir}spinnaker-local.yml"
 clouddriver_config_file="${spinnaker_config_dir}clouddriver-local.yml"
 igor_config_file="${spinnaker_config_dir}igor-local.yml"
-
-# Enable Azure storage for front50
-sudo /opt/spinnaker/install/change_cassandra.sh --echo=inMemory --front50=azs
-sudo sed -i "s|storageAccountName:|storageAccountName: ${storage_account_name}|" $spinnaker_config_file
-sudo sed -i "s|storageAccountKey:|storageAccountKey: ${storage_account_key}|" $spinnaker_config_file
 
 # Configure Spinnaker for Docker Hub and Azure Container Registry
 sudo touch "$clouddriver_config_file"
@@ -143,5 +125,6 @@ dockerRegistry:
   enabled: true
 EOF
 
-# Restart spinnaker so that config changes take effect
-curl --silent "${artifacts_location}spinnaker/await_restart_spinnaker/await_restart_spinnaker.sh${artifacts_location_sas_token}" | sudo bash -s
+# Restart services so that config changes take effect
+curl --silent "${artifacts_location}spinnaker/await_restart_service/await_restart_service.sh${artifacts_location_sas_token}" | sudo bash -s -- --service clouddriver
+curl --silent "${artifacts_location}spinnaker/await_restart_service/await_restart_service.sh${artifacts_location_sas_token}" | sudo bash -s -- --service igor
