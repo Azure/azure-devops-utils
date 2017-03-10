@@ -72,7 +72,7 @@ do
       exit 13
       ;;
     *)
-      echo "ERROR: Unknown argument '$key'" 1>&2
+      echo "ERROR: Unknown argument '$key' to script '$0'" 1>&2
       exit -1
   esac
 done

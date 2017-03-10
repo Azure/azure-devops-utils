@@ -121,7 +121,7 @@ do
       exit 13
       ;;
     *)
-      echo "ERROR: Unknown argument '$key'" 1>&2
+      echo "ERROR: Unknown argument '$key' to script '$0'" 1>&2
       exit -1
   esac
 done
@@ -142,8 +142,8 @@ spinnaker_kube_config_file="/home/spinnaker/.kube/config"
 kubectl_file="/usr/local/bin/kubectl"
 docker_hub_registry="index.docker.io"
 
-#Install Spinnaker
-curl --silent https://raw.githubusercontent.com/spinnaker/spinnaker/master/InstallSpinnaker.sh | sudo bash -s -- --quiet --noinstall_cassandra
+# Configure Spinnaker to use Azure Storage
+curl --silent "${artifacts_location}spinnaker/install_spinnaker/install_spinnaker.sh${artifacts_location_sas_token}" | sudo bash -s -- -san "$storage_account_name" -sak "$storage_account_key"  -al "$artifacts_location" -st "$artifacts_location_sas_token"
 
 # Install Azure cli
 curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
@@ -167,7 +167,7 @@ else
 fi
 
 # Configure Spinnaker to target kubernetes
-curl --silent "${artifacts_location}spinnaker/configure_k8s/configure_k8s.sh${artifacts_location_sas_token}" | sudo bash -s -- -san "$storage_account_name" -sak "$storage_account_key" -rg "$azure_container_registry" -ci "$client_id" -ck "$client_key" -rp "$docker_repository" -al "$artifacts_location" -st "$artifacts_location_sas_token"
+curl --silent "${artifacts_location}spinnaker/configure_k8s/configure_k8s.sh${artifacts_location_sas_token}" | sudo bash -s -- -rg "$azure_container_registry" -ci "$client_id" -ck "$client_key" -rp "$docker_repository" -al "$artifacts_location" -st "$artifacts_location_sas_token"
 
 # Install and setup Kubernetes cli for admin user
 sudo curl -L -s -o $kubectl_file https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
