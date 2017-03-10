@@ -18,6 +18,8 @@ Arguments
   --job_short_name|-jsn               : Desired Jenkins job short name
   --job_display_name|-jdn             : Desired Jenkins job display name
   --job_description|-jd               : Desired Jenkins job description
+  --scm_poll_schedule|-sps            : cron style schedule for SCM polling
+  --scm_poll_ignore_commit_hooks|spi  : Ignore changes notified by SCM post-commit hooks. (Will be ignore if the poll schedule is not defined)
   --artifacts_location|-al            : Url used to reference other scripts/artifacts.
   --sas_token|-st                     : A sas token needed if the artifacts location is private.
 EOF
@@ -40,6 +42,8 @@ job_short_name="basic-docker-build"
 job_display_name="Basic Docker Build"
 job_description="A basic pipeline that builds a Docker container. The job expects a Dockerfile at the root of the git repository"
 repository="${USER}/myfirstapp"
+scm_poll_schedule=""
+scm_poll_ignore_commit_hooks="0"
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
 
 while [[ $# > 0 ]]
@@ -99,6 +103,14 @@ do
       job_description="$1"
       shift
       ;;
+   --scm_poll_schedule|-sps)
+      scm_poll_schedule="$1"
+      shift
+      ;;
+  --scm_poll_ignore_commit_hooks|-spi)
+      scm_poll_ignore_commit_hooks="$1"
+      shift
+      ;;
     --artifacts_location|-al)
       artifacts_location="$1"
       shift
@@ -142,6 +154,27 @@ job_xml=${job_xml//'{insert-git-url}'/${git_url}}
 job_xml=${job_xml//'{insert-registry}'/${registry}}
 job_xml=${job_xml//'{insert-docker-credentials}'/${credentials_id}}
 job_xml=${job_xml//'{insert-container-repository}'/${repository}}
+
+
+if [ -n "${scm_poll_schedule}" ]
+then
+  scm_poll_ignore_commit_hooks_bool="false"
+  if [[ "${scm_poll_ignore_commit_hooks}" == "1" ]]
+  then
+    scm_poll_ignore_commit_hooks_bool="true"
+  fi
+  triggers_xml_node=$(cat <<EOF
+<triggers>
+  <hudson.triggers.SCMTrigger>
+  <spec>${scm_poll_schedule}</spec>
+  <ignorePostCommitHooks>${scm_poll_ignore_commit_hooks_bool}</ignorePostCommitHooks>
+  </hudson.triggers.SCMTrigger>
+</triggers>
+EOF
+)
+  job_xml=${job_xml//'<triggers/>'/${triggers_xml_node}}
+fi
+
 job_xml=${job_xml//'{insert-groovy-script}'/"$(curl -s ${artifacts_location}/jenkins/basic-docker-build.groovy${artifacts_location_sas_token})"}
 echo "${job_xml}" > job.xml
 function retry_until_successful {
