@@ -21,6 +21,7 @@ Arguments
   --pipeline_registry|-prg                      : Registry to target in the pipeline
   --pipeline_repository|-prp                    : Repository to target in the pipeline
   --pipeline_port|-pp                           : Port to target in your pipeline
+  --front50_port|-fp                            : Port used for Front50, defaulted to 8080
   --artifacts_location|-al                      : Url used to reference other scripts/artifacts.
   --sas_token|-st                               : A sas token needed if the artifacts location is private.
 EOF
@@ -42,6 +43,7 @@ pipeline_registry="index.docker.io"
 pipeline_repository="lwander/spin-kub-demo"
 pipeline_port="8000"
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
+front50_port=8080
 
 while [[ $# > 0 ]]
 do
@@ -108,6 +110,10 @@ do
       pipeline_port="$1"
       shift
       ;;
+    --front50_port|-fp)
+      front50_port="$1"
+      shift
+      ;;
     --artifacts_location|-al)
       artifacts_location="$1"
       shift
@@ -137,6 +143,7 @@ throw_if_empty --master_count $master_count
 throw_if_empty --storage_account_name $storage_account_name
 throw_if_empty --storage_account_key $storage_account_key
 throw_if_empty --azure_container_registry $azure_container_registry
+throw_if_empty --front50_port $front50_port
 
 spinnaker_kube_config_file="/home/spinnaker/.kube/config"
 kubectl_file="/usr/local/bin/kubectl"
@@ -145,10 +152,18 @@ docker_hub_registry="index.docker.io"
 # Configure Spinnaker to use Azure Storage
 curl --silent "${artifacts_location}spinnaker/install_spinnaker/install_spinnaker.sh${artifacts_location_sas_token}" | sudo bash -s -- -san "$storage_account_name" -sak "$storage_account_key"  -al "$artifacts_location" -st "$artifacts_location_sas_token"
 
+# Front50 conflicts with the default Jenkins port, so allow for using a different port
+if [ "$front50_port" != "8080" ]; then
+  sudo sed -i "s|front50:|front50:\n    port: $front50_port|" /opt/spinnaker/config/spinnaker-local.yml
+  sudo service spinnaker restart # We have to restart all services so that they know how to communicate to front50
+fi
+
 # Install Azure cli
-curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
-sudo apt-get -y install nodejs
-sudo npm install -g azure-cli
+if !(command -v azure >/dev/null); then
+  curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
+  sudo apt-get -y install nodejs
+  sudo npm install -g azure-cli
+fi
 
 # Login to azure cli using service principal
 azure telemetry --disable
@@ -170,10 +185,12 @@ fi
 curl --silent "${artifacts_location}spinnaker/configure_k8s/configure_k8s.sh${artifacts_location_sas_token}" | sudo bash -s -- -rg "$azure_container_registry" -ci "$client_id" -ck "$client_key" -rp "$docker_repository" -al "$artifacts_location" -st "$artifacts_location_sas_token"
 
 # Install and setup Kubernetes cli for admin user
-sudo curl -L -s -o $kubectl_file https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
-sudo chmod +x $kubectl_file
-mkdir -p /home/${user_name}/.kube
-sudo cp $spinnaker_kube_config_file /home/${user_name}/.kube/config
+if !(command -v kubectl >/dev/null); then
+  sudo curl -L -s -o $kubectl_file https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+  sudo chmod +x $kubectl_file
+  mkdir -p /home/${user_name}/.kube
+  sudo cp $spinnaker_kube_config_file /home/${user_name}/.kube/config
+fi
 
 # Create pipeline if enabled
 if (( $include_kubernetes_pipeline )); then
@@ -183,8 +200,10 @@ if (( $include_kubernetes_pipeline )); then
         docker_account_name="azure-container-registry"
         pipeline_registry="$azure_container_registry"
 
-        # Install docker CLI
-        curl -sSL https://get.docker.com/ | sh
+        #install docker if not already installed
+        if !(command -v docker >/dev/null); then
+          sudo curl -sSL https://get.docker.com/ | sh
+        fi
         sudo gpasswd -a $user_name docker
 
         # Add (virtually) empty container to ACR to properly initialize Spinnaker. This fixes two bugs:

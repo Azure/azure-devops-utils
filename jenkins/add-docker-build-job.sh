@@ -7,7 +7,7 @@ Command
 Arguments
   --jenkins_url|-j          [Required]: Jenkins URL
   --jenkins_user_name|-ju   [Required]: Jenkins user name
-  --jenkins_password|-jp    [Required]: Jenkins password
+  --jenkins_password|-jp              : Jenkins password. If not specified and the user name is "admin", the initialAdminPassword will be used
   --git_url|-g              [Required]: Git URL with a Dockerfile in it's root
   --registry|-r             [Required]: Registry url targeted by the pipeline
   --registry_user_name|-ru  [Required]: Registry user name
@@ -131,7 +131,9 @@ done
 
 throw_if_empty --jenkins_url $jenkins_url
 throw_if_empty --jenkins_user_name $jenkins_user_name
-throw_if_empty --jenkins_password $jenkins_password
+if [ "$jenkins_user_name" != "admin" ]; then
+  throw_if_empty --jenkins_password $jenkins_password
+fi
 throw_if_empty --git_url $git_url
 throw_if_empty --registry $registry
 throw_if_empty --registry_user_name $registry_user_name
@@ -193,6 +195,11 @@ function retry_until_successful {
 
 #download jenkins cli (wait for Jenkins to be online)
 retry_until_successful wget ${jenkins_url}/jnlpJars/jenkins-cli.jar -O jenkins-cli.jar
+
+if [ -z "$jenkins_password" ]; then
+  # NOTE: Intentionally setting this after the first retry_until_successful to ensure the initialAdminPassword file exists
+  jenkins_password=`sudo cat /var/lib/jenkins/secrets/initialAdminPassword`
+fi
 
 #install the required plugins
 retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "credentials" -deploy --username ${jenkins_user_name} --password ${jenkins_password}
