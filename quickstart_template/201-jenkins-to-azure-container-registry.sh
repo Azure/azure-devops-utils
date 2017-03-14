@@ -11,6 +11,7 @@ Arguments
   --registry|-r                         : Registry url targeted by the pipeline
   --registry_user_name|-ru              : Registry user name
   --registry_password|-rp               : Registry password
+  --repository|-rr                      : Repository targeted by the pipeline
   --artifacts_location|-al              : Url used to reference other scripts/artifacts.
   --sas_token|-st                       : A sas token needed if the artifacts location is private.
 EOF
@@ -29,6 +30,7 @@ function throw_if_empty() {
 #defaults
 include_docker_build_pipeline="0"
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
+repository="${vm_user_name}/myfirstapp"
 
 while [[ $# > 0 ]]
 do
@@ -53,6 +55,10 @@ do
       ;;
     --registry_password|-rp)
       registry_password="$1"
+      shift
+      ;;
+    --repository|-rr)
+      repository="$1"
       shift
       ;;
     --include_docker_build_pipeline|-i)
@@ -94,8 +100,10 @@ sudo apt-get install jenkins --yes
 sudo apt-get install jenkins --yes # sometime the first apt-get install jenkins command fails, so we try it twice
 sudo apt-get install git --yes
 
-#install docker
-sudo curl -sSL https://get.docker.com/ | sh
+#install docker if not already installed
+if !(command -v docker >/dev/null); then
+  sudo curl -sSL https://get.docker.com/ | sh
+fi
 
 #make sure jenkins has access to docker cli
 sudo gpasswd -a jenkins docker
@@ -106,8 +114,5 @@ if [[ "${include_docker_build_pipeline}" == "1" ]]
 then
     echo "Including the pipeline"
 
-    #get password and call build creation script
-    admin_password=`sudo cat /var/lib/jenkins/secrets/initialAdminPassword`
-
-    curl --silent "${artifacts_location}/jenkins/add-docker-build-job.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "http://localhost:8080/" -ju "admin" -jp "${admin_password}" -g "${git_url}" -r "${registry}" -ru "${registry_user_name}"  -rp "${registry_password}" -rr "${vm_user_name}/myfirstapp"
+    curl --silent "${artifacts_location}/jenkins/add-docker-build-job.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "http://localhost:8080/" -ju "admin" -g "${git_url}" -r "${registry}" -ru "${registry_user_name}"  -rp "${registry_password}" -rr "$repository"
 fi
