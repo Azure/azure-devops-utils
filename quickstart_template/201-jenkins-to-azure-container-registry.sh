@@ -114,5 +114,5 @@ if [[ "${include_docker_build_pipeline}" == "1" ]]
 then
     echo "Including the pipeline"
 
-    curl --silent "${artifacts_location}/jenkins/add-docker-build-job.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "http://localhost:8080/" -ju "admin" -g "${git_url}" -r "${registry}" -ru "${registry_user_name}"  -rp "${registry_password}" -rr "$repository"
+    curl --silent "${artifacts_location}/jenkins/add-docker-build-job.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "http://localhost:8080/" -ju "admin" -g "${git_url}" -r "${registry}" -ru "${registry_user_name}"  -rp "${registry_password}" -rr "$repository" -sps "* * * * *"
 fi
