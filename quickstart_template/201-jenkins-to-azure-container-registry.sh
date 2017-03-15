@@ -30,8 +30,6 @@ function throw_if_empty() {
 #defaults
 include_docker_build_pipeline="0"
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
-repository="${vm_user_name}/myfirstapp"
-
 while [[ $# > 0 ]]
 do
   key="$1"
@@ -90,6 +88,10 @@ then
     throw_if_empty --registry $registry
     throw_if_empty --registry_user_name $registry_user_name
     throw_if_empty --registry_password $registry_password
+fi
+
+if [ -z "$repository" ]; then
+  repository="${vm_user_name}/myfirstapp"
 fi
 
 #install jenkins
