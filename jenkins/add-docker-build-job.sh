@@ -181,7 +181,7 @@ job_xml=${job_xml//'{insert-groovy-script}'/"$(curl -s ${artifacts_location}/jen
 echo "${job_xml}" > job.xml
 function retry_until_successful {
     counter=0
-    ${@}
+    "${@}"
     while [ $? -ne 0 ]; do
         if [[ "$counter" -gt 20 ]]; then
             exit 1
@@ -203,9 +203,9 @@ fi
 
 #install the required plugins
 retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "credentials" -deploy --username ${jenkins_user_name} --password ${jenkins_password}
-retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "workflow-cps" -deploy --username ${jenkins_user_name} --password ${jenkins_password}
-retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "workflow-job" -deploy --username ${jenkins_user_name} --password ${jenkins_password}
+retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "workflow-aggregator" -deploy --username ${jenkins_user_name} --password ${jenkins_password}
 retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "docker-workflow" -restart --username ${jenkins_user_name} --password ${jenkins_password}
+retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "git" -restart --username ${jenkins_user_name} --password ${jenkins_password}
 
 #wait for instance to be back online
 retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} version --username ${jenkins_user_name} --password ${jenkins_password}
