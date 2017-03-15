@@ -37,10 +37,20 @@ NB! The repository must contain a Dockerfile in the root</description>
     </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
   </properties>
   <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.27">
-    <script>
-    {insert-groovy-script}
-    </script>
+    <script>node {
+    def built_img = &apos;&apos;
+    stage(&apos;Checkout git repo&apos;) {
+      git branch: &apos;master&apos;, url: params.git_repo
+    }
+    stage(&apos;Build Docker image&apos;) {
+      built_img = docker.build(params.docker_repository + &quot;:${env.BUILD_NUMBER}&quot;, &apos;.&apos;)
+    }
+    stage(&apos;Push Docker image to Azure Container Registry&apos;) {
+      docker.withRegistry(params.registry_url, params.registry_credentials_id ) {
+        built_img.push(&quot;${env.BUILD_NUMBER}&quot;);
+      }
+    }
+}</script>
     <sandbox>true</sandbox>
   </definition>
-  <triggers/>
 </flow-definition>

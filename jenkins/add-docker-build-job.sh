@@ -150,12 +150,12 @@ credentials_xml=${credentials_xml//'{insert-user-name}'/${registry_user_name}}
 credentials_xml=${credentials_xml//'{insert-user-password}'/${registry_password}}
 
 #prepare job.xml
-job_xml=${job_xml//'{insert-job-display-name}'/${job_display_name}}
-job_xml=${job_xml//'{insert-job-description}'/${job_description}}
-job_xml=${job_xml//'{insert-git-url}'/${git_url}}
-job_xml=${job_xml//'{insert-registry}'/${registry}}
-job_xml=${job_xml//'{insert-docker-credentials}'/${credentials_id}}
-job_xml=${job_xml//'{insert-container-repository}'/${repository}}
+job_xml="${job_xml//'{insert-job-display-name}'/${job_display_name}}"
+job_xml="${job_xml//'{insert-job-description}'/${job_description}}"
+job_xml="${job_xml//'{insert-git-url}'/${git_url}}"
+job_xml="${job_xml//'{insert-registry}'/${registry}}"
+job_xml="${job_xml//'{insert-docker-credentials}'/${credentials_id}}"
+job_xml="${job_xml//'{insert-container-repository}'/${repository}}"
 
 
 if [ -n "${scm_poll_schedule}" ]
@@ -174,14 +174,12 @@ then
 </triggers>
 EOF
 )
-  job_xml=${job_xml//'<triggers/>'/${triggers_xml_node}}
+  job_xml="${job_xml//'<triggers/>'/${triggers_xml_node}}"
 fi
 
-job_xml=${job_xml//'{insert-groovy-script}'/"$(curl -s ${artifacts_location}/jenkins/basic-docker-build.groovy${artifacts_location_sas_token})"}
-echo "${job_xml}" > job.xml
 function retry_until_successful {
     counter=0
-    ${@}
+    "${@}"
     while [ $? -ne 0 ]; do
         if [[ "$counter" -gt 20 ]]; then
             exit 1
@@ -213,8 +211,7 @@ retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} version --use
 #add user/pwd
 retry_until_successful echo "${credentials_xml}" | java -jar jenkins-cli.jar -s ${jenkins_url} create-credentials-by-xml SystemCredentialsProvider::SystemContextResolver::jenkins "(global)" --username ${jenkins_user_name} --password ${jenkins_password}
 #add job
-retry_until_successful cat job.xml | java -jar jenkins-cli.jar -s ${jenkins_url} create-job ${job_short_name} --username ${jenkins_user_name} --password ${jenkins_password}
+retry_until_successful echo "${job_xml}" | java -jar jenkins-cli.jar -s ${jenkins_url} create-job ${job_short_name} --username ${jenkins_user_name} --password ${jenkins_password}
 
 #cleanup
-rm job.xml
 rm jenkins-cli.jar
