@@ -5,15 +5,14 @@ https://github.com/Azure/azure-quickstart-templates/tree/master/201-jenkins-to-a
 Command
   $0
 Arguments
-  --include_docker_build_pipeline|-i    : Include a docker build pipeline (off by default). If enabled, then the rest of the arguments are required
-  --vm_user_name|-u                     : VM user name
-  --git_url|-g                          : Git URL with a Dockerfile in it's root
-  --registry|-r                         : Registry url targeted by the pipeline
-  --registry_user_name|-ru              : Registry user name
-  --registry_password|-rp               : Registry password
-  --repository|-rr                      : Repository targeted by the pipeline
-  --artifacts_location|-al              : Url used to reference other scripts/artifacts.
-  --sas_token|-st                       : A sas token needed if the artifacts location is private.
+  --vm_user_name|-u        [Required] : VM user name
+  --git_url|-g             [Required] : Git URL with a Dockerfile in it's root
+  --registry|-r            [Required] : Registry url targeted by the pipeline
+  --registry_user_name|-ru [Required] : Registry user name
+  --registry_password|-rp  [Required] : Registry password
+  --repository|-rr         [Required] : Repository targeted by the pipeline
+  --artifacts_location|-al            : Url used to reference other scripts/artifacts.
+  --sas_token|-st                     : A sas token needed if the artifacts location is private.
 EOF
 }
 
@@ -28,7 +27,6 @@ function throw_if_empty() {
 }
 
 #defaults
-include_docker_build_pipeline="0"
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
 while [[ $# > 0 ]]
 do
@@ -59,10 +57,6 @@ do
       repository="$1"
       shift
       ;;
-    --include_docker_build_pipeline|-i)
-      include_docker_build_pipeline="$1"
-      shift
-      ;;
     --artifacts_location|-al)
       artifacts_location="$1"
       shift
@@ -81,14 +75,11 @@ do
   esac
 done
 
-if [[ "${include_docker_build_pipeline}" == "1" ]]
-then
-    throw_if_empty --vm_user_name $vm_user_name
-    throw_if_empty --git_url $git_url
-    throw_if_empty --registry $registry
-    throw_if_empty --registry_user_name $registry_user_name
-    throw_if_empty --registry_password $registry_password
-fi
+throw_if_empty --vm_user_name $vm_user_name
+throw_if_empty --git_url $git_url
+throw_if_empty --registry $registry
+throw_if_empty --registry_user_name $registry_user_name
+throw_if_empty --registry_password $registry_password
 
 if [ -z "$repository" ]; then
   repository="${vm_user_name}/myfirstapp"
@@ -112,9 +103,5 @@ sudo gpasswd -a jenkins docker
 skill -KILL -u jenkins
 sudo service jenkins restart
 
-if [[ "${include_docker_build_pipeline}" == "1" ]]
-then
-    echo "Including the pipeline"
-
-    curl --silent "${artifacts_location}/jenkins/add-docker-build-job.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "http://localhost:8080/" -ju "admin" -g "${git_url}" -r "${registry}" -ru "${registry_user_name}"  -rp "${registry_password}" -rr "$repository" -sps "* * * * *" -al "$artifacts_location" -st "$artifacts_location_sas_token"
-fi
+echo "Including the pipeline"
+curl --silent "${artifacts_location}/jenkins/add-docker-build-job.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "http://localhost:8080/" -ju "admin" -g "${git_url}" -r "${registry}" -ru "${registry_user_name}"  -rp "${registry_password}" -rr "$repository" -sps "* * * * *" -al "$artifacts_location" -st "$artifacts_location_sas_token"
