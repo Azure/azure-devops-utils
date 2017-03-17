@@ -134,7 +134,6 @@ throw_if_empty --azure_container_registry $azure_container_registry
 throw_if_empty --docker_repository $docker_repository
 throw_if_empty --pipeline_port $pipeline_port
 
-include_docker_build_pipeline="1"
 include_kubernetes_pipeline="1"
 pipeline_registry="$azure_container_registry"
 front50_port="8081"
@@ -143,4 +142,4 @@ front50_port="8081"
 curl --silent "${artifacts_location}quickstart_template/spinnaker_vm_to_kubernetes.sh${artifacts_location_sas_token}" | sudo bash -s -- -ci "$client_id" -ck "$client_key" -si "$subscription_id" -ti "$tenant_id" -un "$user_name" -rg "$resource_group" -mf "$master_fqdn" -mc "$master_count" -san "$storage_account_name" -sak "$storage_account_key" -acr "$azure_container_registry" -ikp "$include_kubernetes_pipeline" -prg "$pipeline_registry" -prp "$docker_repository" -pp "$pipeline_port" -fp "$front50_port" -al "$artifacts_location" -st "$artifacts_location_sas_token"
 
 # Configure Jenkins
-curl --silent "${artifacts_location}quickstart_template/201-jenkins-to-azure-container-registry.sh${artifacts_location_sas_token}" | sudo bash -s -- -i "$include_docker_build_pipeline" -u "$user_name" -g "$git_repository" -r "https://$azure_container_registry" -ru "$client_id" -rp "$client_key" -rr "$docker_repository" -al "$artifacts_location" -st "$artifacts_location_sas_token"
+curl --silent "${artifacts_location}quickstart_template/201-jenkins-to-azure-container-registry.sh${artifacts_location_sas_token}" | sudo bash -s -- -u "$user_name" -g "$git_repository" -r "https://$azure_container_registry" -ru "$client_id" -rp "$client_key" -rr "$docker_repository" -al "$artifacts_location" -st "$artifacts_location_sas_token"
