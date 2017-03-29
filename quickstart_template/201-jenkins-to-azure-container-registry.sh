@@ -86,11 +86,9 @@ if [ -z "$repository" ]; then
 fi
 
 #install jenkins
-wget -q -O - https://pkg.jenkins.io/debian/jenkins-ci.org.key | sudo apt-key add -
-sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
-sudo apt-get update --yes
-sudo apt-get install jenkins --yes
-sudo apt-get install jenkins --yes # sometime the first apt-get install jenkins command fails, so we try it twice
+curl --silent "${artifacts_location}jenkins/install_jenkins.sh${artifacts_location_sas_token}" | sudo bash -s
+
+#install git
 sudo apt-get install git --yes
 
 #install docker if not already installed

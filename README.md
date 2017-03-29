@@ -12,6 +12,7 @@ This repository contains utility scripts to run/configure DevOp systems in Azure
   * [unsecure-jenkins-instance.sh](jenkins/unsecure-jenkins-instance.sh): Disables the security of a Jenkins instance.
   * [Jenkins-Windows-Init-Script.ps1](powershell/Jenkins-Windows-Init-Script.ps1): Sample script on how to setup your Windows Azure Jenkins Agent to communicate through JNLP with the Jenkins master.
   * [Migrate-Image-From-Classic.ps1](powershell/Migrate-Image-From-Classic.ps1): Migrates an image from the classic image model to the new Azure Resource Manager model.
+  * [install_jenkins.sh](jenkins/install_jenkins.sh): Simple script to install Jenkins on a Linux VM.
 * Spinnaker
   * [add_k8s_pipeline.sh](spinnaker/add_k8s_pipeline/): Adds a Kubernetes pipeline with three main stages:
     1. Deploy to a development environment
