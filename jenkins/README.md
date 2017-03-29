@@ -26,4 +26,9 @@ If you accidentally set up security realm / authorization in such a way that you
 ***Don't make your instance publicly available when running this script! Anyone can access your unsecure Jenkins instance!***
 For more informations see the [Jenkins documentation](https://jenkins.io/doc/book/operating/security/#disabling-security)
 
+## Install Jenkins
+> [install_jenkins.sh](install_jenkins.sh)
+
+Bash script that installs Jenkins.
+
 ## Questions/Comments? azdevopspub@microsoft.com
