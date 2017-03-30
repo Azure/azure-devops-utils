@@ -6,8 +6,8 @@ https://github.com/Azure/azure-quickstart-templates/tree/master/301-jenkins-acr-
 Command
   $0
 Arguments
-  --client_id|-ci                    [Required] : Service principal client id  used to dynamically manage resource in your subscription
-  --client_key|-ck                   [Required] : Service principal client key used to dynamically manage resource in your subscription
+  --app_id|-ai                       [Required] : Service principal app id  used to dynamically manage resource in your subscription
+  --app_key|-ak                      [Required] : Service principal app key used to dynamically manage resource in your subscription
   --subscription_id|-si              [Required] : Subscription Id
   --tenant_id|-ti                    [Required] : Tenant Id
   --user_name|-un                    [Required] : Admin user name for your Spinnaker VM and Kubernetes cluster
@@ -45,12 +45,12 @@ do
   key="$1"
   shift
   case $key in
-    --client_id|-ci)
-      client_id="$1"
+    --app_id|-ai)
+      app_id="$1"
       shift
       ;;
-    --client_key|-ck)
-      client_key="$1"
+    --app_key|-ak)
+      app_key="$1"
       shift
       ;;
     --subscription_id|-si)
@@ -119,8 +119,8 @@ do
   esac
 done
 
-throw_if_empty --client_id $client_id
-throw_if_empty --client_key $client_key
+throw_if_empty --app_id $app_id
+throw_if_empty --app_key $app_key
 throw_if_empty --subscription_id $subscription_id
 throw_if_empty --tenant_id $tenant_id
 throw_if_empty --user_name $user_name
@@ -139,7 +139,7 @@ pipeline_registry="$azure_container_registry"
 front50_port="8081"
 
 # Configure Spinnaker (do this first because the default InstallSpinnaker.sh script sets up front50 on port 8080 and that might fail if we did Jenkins first)
-curl --silent "${artifacts_location}quickstart_template/spinnaker_vm_to_kubernetes.sh${artifacts_location_sas_token}" | sudo bash -s -- -ci "$client_id" -ck "$client_key" -si "$subscription_id" -ti "$tenant_id" -un "$user_name" -rg "$resource_group" -mf "$master_fqdn" -mc "$master_count" -san "$storage_account_name" -sak "$storage_account_key" -acr "$azure_container_registry" -ikp "$include_kubernetes_pipeline" -prg "$pipeline_registry" -prp "$docker_repository" -pp "$pipeline_port" -fp "$front50_port" -al "$artifacts_location" -st "$artifacts_location_sas_token"
+curl --silent "${artifacts_location}quickstart_template/spinnaker_vm_to_kubernetes.sh${artifacts_location_sas_token}" | sudo bash -s -- -ai "$app_id" -ak "$app_key" -si "$subscription_id" -ti "$tenant_id" -un "$user_name" -rg "$resource_group" -mf "$master_fqdn" -mc "$master_count" -san "$storage_account_name" -sak "$storage_account_key" -acr "$azure_container_registry" -ikp "$include_kubernetes_pipeline" -prg "$pipeline_registry" -prp "$docker_repository" -pp "$pipeline_port" -fp "$front50_port" -al "$artifacts_location" -st "$artifacts_location_sas_token"
 
 # Configure Jenkins
-curl --silent "${artifacts_location}quickstart_template/201-jenkins-to-azure-container-registry.sh${artifacts_location_sas_token}" | sudo bash -s -- -u "$user_name" -g "$git_repository" -r "https://$azure_container_registry" -ru "$client_id" -rp "$client_key" -rr "$docker_repository" -al "$artifacts_location" -st "$artifacts_location_sas_token"
+curl --silent "${artifacts_location}quickstart_template/201-jenkins-to-azure-container-registry.sh${artifacts_location_sas_token}" | sudo bash -s -- -u "$user_name" -g "$git_repository" -r "https://$azure_container_registry" -ru "$app_id" -rp "$app_key" -rr "$docker_repository" -al "$artifacts_location" -st "$artifacts_location_sas_token"

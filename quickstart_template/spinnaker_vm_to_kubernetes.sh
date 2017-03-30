@@ -6,8 +6,8 @@ https://github.com/Azure/azure-quickstart-templates/tree/master/spinnaker-vm-to-
 Command
   $0
 Arguments
-  --client_id|-ci                    [Required] : Service principal client id  used to dynamically manage resource in your subscription
-  --client_key|-ck                   [Required] : Service principal client key used to dynamically manage resource in your subscription
+  --app_id|-ai                       [Required] : Service principal app id  used to dynamically manage resource in your subscription
+  --app_key|-ak                      [Required] : Service principal app key used to dynamically manage resource in your subscription
   --subscription_id|-si              [Required] : Subscription Id
   --tenant_id|-ti                    [Required] : Tenant Id
   --user_name|-un                    [Required] : Admin user name for your Spinnaker VM and Kubernetes cluster
@@ -50,12 +50,12 @@ do
   key="$1"
   shift
   case $key in
-    --client_id|-ci)
-      client_id="$1"
+    --app_id|-ai)
+      app_id="$1"
       shift
       ;;
-    --client_key|-ck)
-      client_key="$1"
+    --app_key|-ak)
+      app_key="$1"
       shift
       ;;
     --subscription_id|-si)
@@ -132,8 +132,8 @@ do
   esac
 done
 
-throw_if_empty --client_id $client_id
-throw_if_empty --client_key $client_key
+throw_if_empty --app_id $app_id
+throw_if_empty --app_key $app_key
 throw_if_empty --subscription_id $subscription_id
 throw_if_empty --tenant_id $tenant_id
 throw_if_empty --user_name $user_name
@@ -167,7 +167,7 @@ fi
 
 # Login to azure cli using service principal
 azure telemetry --disable
-azure login --service-principal -u $client_id -p $client_key --tenant $tenant_id
+azure login --service-principal -u $app_id -p $app_key --tenant $tenant_id
 azure account set $subscription_id
 
 # Copy kube config to this VM
@@ -182,7 +182,7 @@ else
 fi
 
 # Configure Spinnaker to target kubernetes
-curl --silent "${artifacts_location}spinnaker/configure_k8s/configure_k8s.sh${artifacts_location_sas_token}" | sudo bash -s -- -rg "$azure_container_registry" -ci "$client_id" -ck "$client_key" -rp "$docker_repository" -al "$artifacts_location" -st "$artifacts_location_sas_token"
+curl --silent "${artifacts_location}spinnaker/configure_k8s/configure_k8s.sh${artifacts_location_sas_token}" | sudo bash -s -- -rg "$azure_container_registry" -ai "$app_id" -ak "$app_key" -rp "$docker_repository" -al "$artifacts_location" -st "$artifacts_location_sas_token"
 
 # Install and setup Kubernetes cli for admin user
 if !(command -v kubectl >/dev/null); then
@@ -215,7 +215,7 @@ if (( $include_kubernetes_pipeline )); then
         touch "$temp_dir/Dockerfile"
         echo -e "FROM scratch\nADD . README" >"$temp_dir/Dockerfile"
         # We added the user to the docker group above, but that doesn't take effect until the next login so we still need to use sudo here
-        sudo docker login "$azure_container_registry" -u "$client_id" -p "$client_key"
+        sudo docker login "$azure_container_registry" -u "$app_id" -p "$app_key"
         sudo docker build $temp_dir --tag "$azure_container_registry/$pipeline_repository"
         sudo docker push "$azure_container_registry/$pipeline_repository"
         sudo docker rmi "$azure_container_registry/$pipeline_repository"

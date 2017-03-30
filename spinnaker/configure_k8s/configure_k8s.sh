@@ -7,8 +7,8 @@ Command
 
 Arguments
   --registry|-rg              [Required]: Registry url
-  --client_id|-ci             [Required]: Service principal client id used to access the registry
-  --client_key|-ck            [Required]: Service principal client key used to access the registry
+  --app_id|-ai                [Required]: Service principal app id used to access the registry
+  --app_key|-ak               [Required]: Service principal app key used to access the registry
   --repository|-rp                      : DockerHub repository to configure
   --artifacts_location|-al              : Url used to reference other scripts/artifacts.
   --sas_token|-st                       : A sas token needed if the artifacts location is private.
@@ -41,12 +41,12 @@ do
       registry=${registry%"/"}
       shift
       ;;
-    --client_id|-ci)
-      client_id="$1"
+    --app_id|-ai)
+      app_id="$1"
       shift
       ;;
-    --client_key|-ck)
-      client_key="$1"
+    --app_key|-ak)
+      app_key="$1"
       shift
       ;;
     --repository|-rp)
@@ -72,8 +72,8 @@ do
 done
 
 throw_if_empty --registry $registry
-throw_if_empty --client_id $client_id
-throw_if_empty --client_key $client_key
+throw_if_empty --app_id $app_id
+throw_if_empty --app_key $app_key
 
 spinnaker_config_dir="/opt/spinnaker/config/"
 clouddriver_config_file="${spinnaker_config_dir}clouddriver-local.yml"
@@ -107,8 +107,8 @@ dockerRegistry:
 EOF
 
 sudo sed -i "s|REPLACE_ACR_REGISTRY|${registry}|" $clouddriver_config_file
-sudo sed -i "s|REPLACE_ACR_USERNAME|${client_id}|" $clouddriver_config_file
-sudo sed -i "s|REPLACE_ACR_PASSWORD|${client_key}|" $clouddriver_config_file
+sudo sed -i "s|REPLACE_ACR_USERNAME|${app_id}|" $clouddriver_config_file
+sudo sed -i "s|REPLACE_ACR_PASSWORD|${app_key}|" $clouddriver_config_file
 
 # Replace docker repository in config if specified
 if [ -n "$repository" ]; then
