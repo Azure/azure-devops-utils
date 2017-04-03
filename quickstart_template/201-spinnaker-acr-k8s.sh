@@ -2,7 +2,7 @@
 
 function print_usage() {
   cat <<EOF
-https://github.com/Azure/azure-quickstart-templates/tree/master/spinnaker-vm-to-kubernetes
+https://github.com/Azure/azure-quickstart-templates/tree/master/201-spinnaker-acr-k8s
 Command
   $0
 Arguments
