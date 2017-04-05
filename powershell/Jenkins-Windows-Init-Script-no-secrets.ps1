@@ -5,6 +5,8 @@ $jenkinsserverurl = $args[0]
 $vmname = $args[1]
 $secret = $args[2]
 
+#Default workspace location
+Set-Location d:\
 
 # Download the file to a specific location
 Write-Output "Downloading zulu SDK "
