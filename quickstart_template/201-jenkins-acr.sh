@@ -11,6 +11,7 @@ Arguments
   --registry_user_name|-ru [Required] : Registry user name
   --registry_password|-rp  [Required] : Registry password
   --repository|-rr         [Required] : Repository targeted by the pipeline
+  --jenkins_fqdn|-jf       [Required] : Jenkins FQDN
   --artifacts_location|-al            : Url used to reference other scripts/artifacts.
   --sas_token|-st                     : A sas token needed if the artifacts location is private.
 EOF
@@ -57,6 +58,10 @@ do
       repository="$1"
       shift
       ;;
+    --jenkins_fqdn|-jf)
+      jenkins_fqdn="$1"
+      shift
+      ;;
     --artifacts_location|-al)
       artifacts_location="$1"
       shift
@@ -80,13 +85,14 @@ throw_if_empty --git_url $git_url
 throw_if_empty --registry $registry
 throw_if_empty --registry_user_name $registry_user_name
 throw_if_empty --registry_password $registry_password
+throw_if_empty --jenkins_fqdn $jenkins_fqdn
 
 if [ -z "$repository" ]; then
   repository="${vm_user_name}/myfirstapp"
 fi
 
 #install jenkins
-curl --silent "${artifacts_location}jenkins/install_jenkins.sh${artifacts_location_sas_token}" | sudo bash -s
+curl --silent "${artifacts_location}/jenkins/install_jenkins.sh${artifacts_location_sas_token}" | sudo bash -s -- -jf "${jenkins_fqdn}" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
 
 #install git
 sudo apt-get install git --yes

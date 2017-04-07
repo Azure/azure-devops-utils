@@ -18,6 +18,7 @@ Arguments
   --storage_account_name|-san        [Required] : Storage Account name used for Spinnaker's persistent storage
   --storage_account_key|-sak         [Required] : Storage Account key used for Spinnaker's persistent storage
   --azure_container_registry|-acr    [Required] : Azure Container Registry url
+  --jenkins_fqdn|-jf                 [Required] : Jenkins FQDN
   --docker_repository|-dr                       : Name of the docker repository to be created in your ACR
   --pipeline_port|-pp                           : Port to target in your pipeline
   --artifacts_location|-al                      : Url used to reference other scripts/artifacts.
@@ -93,6 +94,10 @@ do
       azure_container_registry="$1"
       shift
       ;;
+    --jenkins_fqdn|-jf)
+      jenkins_fqdn="$1"
+      shift
+      ;;
     --docker_repository|-dr)
       docker_repository="$1"
       shift
@@ -133,6 +138,7 @@ throw_if_empty --storage_account_key $storage_account_key
 throw_if_empty --azure_container_registry $azure_container_registry
 throw_if_empty --docker_repository $docker_repository
 throw_if_empty --pipeline_port $pipeline_port
+throw_if_empty --jenkins_fqdn $jenkins_fqdn
 
 include_kubernetes_pipeline="1"
 pipeline_registry="$azure_container_registry"
@@ -142,4 +148,4 @@ front50_port="8081"
 curl --silent "${artifacts_location}quickstart_template/201-spinnaker-acr-k8s.sh${artifacts_location_sas_token}" | sudo bash -s -- -ai "$app_id" -ak "$app_key" -si "$subscription_id" -ti "$tenant_id" -un "$user_name" -rg "$resource_group" -mf "$master_fqdn" -mc "$master_count" -san "$storage_account_name" -sak "$storage_account_key" -acr "$azure_container_registry" -ikp "$include_kubernetes_pipeline" -prg "$pipeline_registry" -prp "$docker_repository" -pp "$pipeline_port" -fp "$front50_port" -al "$artifacts_location" -st "$artifacts_location_sas_token"
 
 # Configure Jenkins
-curl --silent "${artifacts_location}quickstart_template/201-jenkins-acr.sh${artifacts_location_sas_token}" | sudo bash -s -- -u "$user_name" -g "$git_repository" -r "https://$azure_container_registry" -ru "$app_id" -rp "$app_key" -rr "$docker_repository" -al "$artifacts_location" -st "$artifacts_location_sas_token"
+curl --silent "${artifacts_location}quickstart_template/201-jenkins-acr.sh${artifacts_location_sas_token}" | sudo bash -s -- -u "$user_name" -g "$git_repository" -r "https://$azure_container_registry" -ru "$app_id" -rp "$app_key" -rr "$docker_repository" -f "$jenkins_fqdn" -al "$artifacts_location" -st "$artifacts_location_sas_token"

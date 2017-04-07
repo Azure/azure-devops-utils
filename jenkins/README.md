@@ -28,7 +28,10 @@ For more informations see the [Jenkins documentation](https://jenkins.io/doc/boo
 
 ## Install Jenkins
 > [install_jenkins.sh](install_jenkins.sh)
+Bash script that installs Jenkins on a Linux VM and exposes it to the public through port 80 (login and cli are disabled).
 
-Bash script that installs Jenkins.
+##  Install Jenkins plugins
+> [install-plugins.sh](install-plugins.sh)
+Bash script that installs Jenkins plugins on a given instance.
 
 ## Questions/Comments? azdevopspub@microsoft.com
