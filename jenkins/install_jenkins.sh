@@ -6,6 +6,7 @@ Command
   $0
 Arguments
   --jenkins_fqdn|-jf       [Required] : Jenkins FQDN
+  --vm_private_ip|-pi                 : The VM private ip used to configure Jenkins URL. If missing, jenkins_fqdn will be used instead
   --artifacts_location|-al            : Url used to reference other scripts/artifacts.
   --sas_token|-st                     : A sas token needed if the artifacts location is private.
 EOF
@@ -34,6 +35,10 @@ do
       jenkins_fqdn="$1"
       shift
       ;;
+    --vm_private_ip|-pi)
+      vm_private_ip="$1"
+      shift
+      ;;
     --artifacts_location|-al)
       artifacts_location="$1"
       shift
@@ -53,6 +58,14 @@ do
 done
 
 throw_if_empty --jenkins_fqdn $jenkins_fqdn
+
+if [ -z "$vm_private_ip" ]; then
+    #use port 80 for public fqdn
+    jenkins_url="http://${jenkins_fqdn}/"
+else
+    #use port 8080 for internal
+    jenkins_url="http://${vm_private_ip}:8080/"
+fi
 
 jenkins_auth_matrix_conf=$(cat <<EOF
 <authorizationStrategy class="hudson.security.ProjectMatrixAuthorizationStrategy">
@@ -93,6 +106,22 @@ jenkins_auth_matrix_conf=$(cat <<EOF
     <permission>hudson.model.Item.Discover:anonymous</permission>
     <permission>hudson.model.Item.Read:anonymous</permission>
 </authorizationStrategy>
+EOF
+)
+
+jenkins_location_conf=$(cat <<EOF
+<?xml version='1.0' encoding='UTF-8'?>
+<jenkins.model.JenkinsLocationConfiguration>
+    <adminAddress>address not configured yet &lt;nobody@nowhere&gt;</adminAddress>
+    <jenkinsUrl>${jenkins_url}</jenkinsUrl>
+</jenkins.model.JenkinsLocationConfiguration>
+EOF
+)
+
+jenkins_disable_reverse_proxy_warning=$(cat <<EOF
+<disabledAdministrativeMonitors>
+    <string>hudson.diagnosis.ReverseProxySetupMonitor</string>
+</disabledAdministrativeMonitors>
 EOF
 )
 
@@ -141,6 +170,15 @@ curl --silent "${artifacts_location}/jenkins/install-plugins.sh${artifacts_locat
 #allow anonymous read access
 inter_jenkins_config=$(sed -zr -e"s|<authorizationStrategy.*</authorizationStrategy>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
 final_jenkins_config=${inter_jenkins_config//'{auth-strategy-token}'/${jenkins_auth_matrix_conf}}
+echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
+
+#set up Jenkins URL to private_ip:8080 so JNLP connections can be established
+echo "${jenkins_location_conf}" | sudo tee /var/lib/jenkins/jenkins.model.JenkinsLocationConfiguration.xml > /dev/null
+
+#disable 'It appears that your reverse proxy set up is broken' warning.
+# This is visible when connecting through SSH tunneling
+inter_jenkins_config=$(sed -zr -e"s|<disabledAdministrativeMonitors/>|{disable-reverse-proxy-token}|" /var/lib/jenkins/config.xml)
+final_jenkins_config=${inter_jenkins_config//'{disable-reverse-proxy-token}'/${jenkins_disable_reverse_proxy_warning}}
 echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
 
 #restart jenkins
