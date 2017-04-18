@@ -1,0 +1,23 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "outputs": {
+    "fqdn": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses',parameters('publicIPName')),'2016-03-30').dnsSettings.fqdn]"
+    }
+  },
+  "parameters": {
+    "dnsPrefix": {
+      "type": "string"
+    },
+    "publicIPLocation": {
+      "type": "string"
+    },
+    "publicIPName": {
+      "type": "string"
+    }
+  },
+  "resources": [],
+  "variables": {}
+}
