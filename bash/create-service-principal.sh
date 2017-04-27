@@ -1,9 +1,23 @@
 #!/bin/bash
 
-#echo "Usage:
-#  1 bash create-service-principal.sh
-#  2 bash create-service-principal.sh <Subscription ID>
-# You need Azure CLI: https://docs.microsoft.com/azure/xplat-cli-install
+cat <<EOF
+********************************************** WARNING **********************************************
+This script uses the Azure CLI 1.0 and has been deprecated. Please install the Azure CLI 2.0
+(https://docs.microsoft.com/cli/azure/install-azure-cli) and use these 3 easy commands:
+
+  az login
+  az account set --subscription <Subscription ID>
+  az ad sp create-for-rbac
+
+By default, the last command creates a Service Principal with the 'Contributor' role scoped to the
+current subscription. Pass the '--help' parameter for more info if you want to change the defaults.
+********************************************** WARNING **********************************************
+EOF
+
+if !(command -v azure >/dev/null); then
+  echo "ERROR: This script requires Azure CLI 1.0, but it could not be found. Is it installed and on your path?" 1>&2
+  exit -1
+fi
 
 SUBSCRIPTION_ID=$1
 
