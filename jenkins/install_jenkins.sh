@@ -165,7 +165,10 @@ sudo apt-get install jenkins --yes
 sudo apt-get install jenkins --yes # sometime the first apt-get install jenkins command fails, so we try it twice
 
 #We need to install workflow-aggregator so all the options in the auth matrix are valid
-curl --silent "${artifacts_location}/jenkins/install-plugins.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "http://localhost:8080/" -ju "admin" -p "azure-vm-agents,windows-azure-storage,matrix-auth,workflow-aggregator"
+plugins=(azure-vm-agents windows-azure-storage matrix-auth workflow-aggregator)
+for plugin in "${plugins[@]}"; do
+  curl --silent "${artifacts_location}/jenkins/run-cli-command.sh${artifacts_location_sas_token}" | sudo bash -s -- -c "install-plugin $plugin -deploy"
+done
 
 #allow anonymous read access
 inter_jenkins_config=$(sed -zr -e"s|<authorizationStrategy.*</authorizationStrategy>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)

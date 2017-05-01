@@ -6,7 +6,7 @@ Command
   $0
 Arguments
   --jenkins_url|-j          [Required]: Jenkins URL
-  --jenkins_user_name|-ju   [Required]: Jenkins user name
+  --jenkins_username|-ju    [Required]: Jenkins user name
   --jenkins_password|-jp              : Jenkins password. If not specified and the user name is "admin", the initialAdminPassword will be used
   --git_url|-g              [Required]: Git URL with a Dockerfile in it's root
   --registry|-r             [Required]: Registry url targeted by the pipeline
@@ -55,8 +55,8 @@ do
       jenkins_url="$1"
       shift
       ;;
-    --jenkins_user_name|-ju)
-      jenkins_user_name="$1"
+    --jenkins_username|-ju)
+      jenkins_username="$1"
       shift
       ;;
     --jenkins_password|-jp)
@@ -130,8 +130,8 @@ do
 done
 
 throw_if_empty --jenkins_url $jenkins_url
-throw_if_empty --jenkins_user_name $jenkins_user_name
-if [ "$jenkins_user_name" != "admin" ]; then
+throw_if_empty --jenkins_username $jenkins_username
+if [ "$jenkins_username" != "admin" ]; then
   throw_if_empty --jenkins_password $jenkins_password
 fi
 throw_if_empty --git_url $git_url
@@ -179,42 +179,25 @@ fi
 
 job_xml=${job_xml//'{insert-groovy-script}'/"$(curl -s ${artifacts_location}/jenkins/basic-docker-build.groovy${artifacts_location_sas_token})"}
 echo "${job_xml}" > job.xml
-function retry_until_successful {
-    counter=0
-    "${@}"
-    while [ $? -ne 0 ]; do
-        if [[ "$counter" -gt 20 ]]; then
-            exit 1
-        else
-            let counter++
-        fi
-        sleep 5
-        "${@}"
-    done;
-}
-
-#download jenkins cli (wait for Jenkins to be online)
-retry_until_successful wget ${jenkins_url}/jnlpJars/jenkins-cli.jar -O jenkins-cli.jar
-
-if [ -z "$jenkins_password" ]; then
-  # NOTE: Intentionally setting this after the first retry_until_successful to ensure the initialAdminPassword file exists
-  jenkins_password=`sudo cat /var/lib/jenkins/secrets/initialAdminPassword`
-fi
 
 #install the required plugins
-retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "credentials" -deploy --username ${jenkins_user_name} --password ${jenkins_password}
-retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "workflow-aggregator" -deploy --username ${jenkins_user_name} --password ${jenkins_password}
-retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "docker-workflow" -restart --username ${jenkins_user_name} --password ${jenkins_password}
-retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} install-plugin "git" -restart --username ${jenkins_user_name} --password ${jenkins_password}
+curl --silent "${artifacts_location}/jenkins/run-cli-command.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "$jenkins_url" -ju "$jenkins_username" -jp "$jenkins_password" -c "install-plugin credentials -deploy"
+plugins=(docker-workflow git)
+for plugin in "${plugins[@]}"; do
+  curl --silent "${artifacts_location}/jenkins/run-cli-command.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "$jenkins_url" -ju "$jenkins_username" -jp "$jenkins_password" -c "install-plugin $plugin -restart"
+done
 
 #wait for instance to be back online
-retry_until_successful java -jar jenkins-cli.jar -s ${jenkins_url} version --username ${jenkins_user_name} --password ${jenkins_password}
+curl --silent "${artifacts_location}/jenkins/run-cli-command.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "$jenkins_url" -ju "$jenkins_username" -jp "$jenkins_password" -c "version"
 
 #add user/pwd
-retry_until_successful echo "${credentials_xml}" | java -jar jenkins-cli.jar -s ${jenkins_url} create-credentials-by-xml SystemCredentialsProvider::SystemContextResolver::jenkins "(global)" --username ${jenkins_user_name} --password ${jenkins_password}
+echo "${credentials_xml}" > credentials.xml
+curl --silent "${artifacts_location}/jenkins/run-cli-command.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "$jenkins_url" -ju "$jenkins_username" -jp "$jenkins_password" -c 'create-credentials-by-xml SystemCredentialsProvider::SystemContextResolver::jenkins (global)' -cif "credentials.xml"
+
 #add job
-retry_until_successful cat job.xml | java -jar jenkins-cli.jar -s ${jenkins_url} create-job ${job_short_name} --username ${jenkins_user_name} --password ${jenkins_password}
+curl --silent "${artifacts_location}/jenkins/run-cli-command.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "$jenkins_url" -ju "$jenkins_username" -jp "$jenkins_password" -c "create-job ${job_short_name}" -cif "job.xml"
 
 #cleanup
+rm credentials.xml
 rm job.xml
 rm jenkins-cli.jar
