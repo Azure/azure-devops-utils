@@ -27,6 +27,17 @@ function throw_if_empty() {
   fi
 }
 
+function run_util_script() {
+  local script_path="$1"
+  shift
+  curl --silent "${artifacts_location}${script_path}${artifacts_location_sas_token}" | sudo bash -s -- "$@"
+  local return_value=$?
+  if [ $return_value -ne 0 ]; then
+    >&2 echo "Failed while executing script '$script_path'."
+    exit $return_value
+  fi
+}
+
 #defaults
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
 while [[ $# > 0 ]]
@@ -92,7 +103,7 @@ if [ -z "$repository" ]; then
 fi
 
 #install jenkins
-curl --silent "${artifacts_location}/jenkins/install_jenkins.sh${artifacts_location_sas_token}" | sudo bash -s -- -jf "${jenkins_fqdn}" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
+run_util_script "jenkins/install_jenkins.sh" -jf "${jenkins_fqdn}" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
 
 #install git
 sudo apt-get install git --yes
@@ -108,4 +119,4 @@ skill -KILL -u jenkins
 sudo service jenkins restart
 
 echo "Including the pipeline"
-curl --silent "${artifacts_location}/jenkins/add-docker-build-job.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "http://localhost:8080/" -ju "admin" -g "${git_url}" -r "${registry}" -ru "${registry_user_name}"  -rp "${registry_password}" -rr "$repository" -sps "* * * * *" -al "$artifacts_location" -st "$artifacts_location_sas_token"
+run_util_script "jenkins/add-docker-build-job.sh" -j "http://localhost:8080/" -ju "admin" -g "${git_url}" -r "${registry}" -ru "${registry_user_name}"  -rp "${registry_password}" -rr "$repository" -sps "* * * * *" -al "$artifacts_location" -st "$artifacts_location_sas_token"

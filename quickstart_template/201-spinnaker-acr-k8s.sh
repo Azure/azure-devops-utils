@@ -37,6 +37,17 @@ function throw_if_empty() {
   fi
 }
 
+function run_util_script() {
+  local script_path="$1"
+  shift
+  curl --silent "${artifacts_location}${script_path}${artifacts_location_sas_token}" | sudo bash -s -- "$@"
+  local return_value=$?
+  if [ $return_value -ne 0 ]; then
+    >&2 echo "Failed while executing script '$script_path'."
+    exit $return_value
+  fi
+}
+
 #Set defaults
 include_kubernetes_pipeline="0"
 pipeline_registry="index.docker.io"
@@ -150,7 +161,7 @@ kubectl_file="/usr/local/bin/kubectl"
 docker_hub_registry="index.docker.io"
 
 # Configure Spinnaker to use Azure Storage
-curl --silent "${artifacts_location}spinnaker/install_spinnaker/install_spinnaker.sh${artifacts_location_sas_token}" | sudo bash -s -- -san "$storage_account_name" -sak "$storage_account_key"  -al "$artifacts_location" -st "$artifacts_location_sas_token"
+run_util_script "spinnaker/install_spinnaker/install_spinnaker.sh" -san "$storage_account_name" -sak "$storage_account_key"  -al "$artifacts_location" -st "$artifacts_location_sas_token"
 
 # Front50 conflicts with the default Jenkins port, so allow for using a different port
 if [ "$front50_port" != "8080" ]; then
@@ -171,7 +182,7 @@ azure login --service-principal -u $app_id -p $app_key --tenant $tenant_id
 azure account set $subscription_id
 
 # Copy kube config to this VM
-curl --silent "${artifacts_location}spinnaker/copy_kube_config/copy_kube_config.sh${artifacts_location_sas_token}" | sudo bash -s -- -un "$user_name" -rg "$resource_group" -mf "$master_fqdn" -mc "$master_count"
+run_util_script "spinnaker/copy_kube_config/copy_kube_config.sh" -un "$user_name" -rg "$resource_group" -mf "$master_fqdn" -mc "$master_count"
 
 # If targeting docker, we have to explicitly add the repository to the config. For private registries, 
 # there's no need because Spinnaker can dynamically retrieve the entire catalog of a registry.
@@ -182,7 +193,7 @@ else
 fi
 
 # Configure Spinnaker to target kubernetes
-curl --silent "${artifacts_location}spinnaker/configure_k8s/configure_k8s.sh${artifacts_location_sas_token}" | sudo bash -s -- -rg "$azure_container_registry" -ai "$app_id" -ak "$app_key" -rp "$docker_repository" -al "$artifacts_location" -st "$artifacts_location_sas_token"
+run_util_script "spinnaker/configure_k8s/configure_k8s.sh" -rg "$azure_container_registry" -ai "$app_id" -ak "$app_key" -rp "$docker_repository" -al "$artifacts_location" -st "$artifacts_location_sas_token"
 
 # Install and setup Kubernetes cli for admin user
 if !(command -v kubectl >/dev/null); then
@@ -222,5 +233,5 @@ if (( $include_kubernetes_pipeline )); then
         sudo docker logout
     fi
 
-    curl --silent "${artifacts_location}spinnaker/add_k8s_pipeline/add_k8s_pipeline.sh${artifacts_location_sas_token}" | sudo bash -s -- -an "$docker_account_name" -rg "$pipeline_registry" -rp "$pipeline_repository" -p "$pipeline_port" -al "$artifacts_location" -st "$artifacts_location_sas_token"
+    run_util_script "spinnaker/add_k8s_pipeline/add_k8s_pipeline.sh" -an "$docker_account_name" -rg "$pipeline_registry" -rp "$pipeline_repository" -p "$pipeline_port" -al "$artifacts_location" -st "$artifacts_location_sas_token"
 fi

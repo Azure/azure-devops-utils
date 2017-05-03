@@ -36,6 +36,17 @@ function throw_if_empty() {
   fi
 }
 
+function run_util_script() {
+  local script_path="$1"
+  shift
+  curl --silent "${artifacts_location}${script_path}${artifacts_location_sas_token}" | sudo bash -s -- "$@"
+  local return_value=$?
+  if [ $return_value -ne 0 ]; then
+    >&2 echo "Failed while executing script '$script_path'."
+    exit $return_value
+  fi
+}
+
 #Set defaults
 pipeline_port="8000"
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
@@ -145,7 +156,7 @@ pipeline_registry="$azure_container_registry"
 front50_port="8081"
 
 # Configure Spinnaker (do this first because the default InstallSpinnaker.sh script sets up front50 on port 8080 and that might fail if we did Jenkins first)
-curl --silent "${artifacts_location}quickstart_template/201-spinnaker-acr-k8s.sh${artifacts_location_sas_token}" | sudo bash -s -- -ai "$app_id" -ak "$app_key" -si "$subscription_id" -ti "$tenant_id" -un "$user_name" -rg "$resource_group" -mf "$master_fqdn" -mc "$master_count" -san "$storage_account_name" -sak "$storage_account_key" -acr "$azure_container_registry" -ikp "$include_kubernetes_pipeline" -prg "$pipeline_registry" -prp "$docker_repository" -pp "$pipeline_port" -fp "$front50_port" -al "$artifacts_location" -st "$artifacts_location_sas_token"
+run_util_script "quickstart_template/201-spinnaker-acr-k8s.sh" -ai "$app_id" -ak "$app_key" -si "$subscription_id" -ti "$tenant_id" -un "$user_name" -rg "$resource_group" -mf "$master_fqdn" -mc "$master_count" -san "$storage_account_name" -sak "$storage_account_key" -acr "$azure_container_registry" -ikp "$include_kubernetes_pipeline" -prg "$pipeline_registry" -prp "$docker_repository" -pp "$pipeline_port" -fp "$front50_port" -al "$artifacts_location" -st "$artifacts_location_sas_token"
 
 # Configure Jenkins
-curl --silent "${artifacts_location}quickstart_template/201-jenkins-acr.sh${artifacts_location_sas_token}" | sudo bash -s -- -u "$user_name" -g "$git_repository" -r "https://$azure_container_registry" -ru "$app_id" -rp "$app_key" -rr "$docker_repository" -jf "$jenkins_fqdn" -al "$artifacts_location" -st "$artifacts_location_sas_token"
+run_util_script "quickstart_template/201-jenkins-acr.sh" -u "$user_name" -g "$git_repository" -r "https://$azure_container_registry" -ru "$app_id" -rp "$app_key" -rr "$docker_repository" -jf "$jenkins_fqdn" -al "$artifacts_location" -st "$artifacts_location_sas_token"

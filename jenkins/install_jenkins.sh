@@ -22,6 +22,17 @@ function throw_if_empty() {
   fi
 }
 
+function run_util_script() {
+  local script_path="$1"
+  shift
+  curl --silent "${artifacts_location}${script_path}${artifacts_location_sas_token}" | sudo bash -s -- "$@"
+  local return_value=$?
+  if [ $return_value -ne 0 ]; then
+    >&2 echo "Failed while executing script '$script_path'."
+    exit $return_value
+  fi
+}
+
 #defaults
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
 azure_web_page_location="/usr/share/nginx/azure"
@@ -167,7 +178,7 @@ sudo apt-get install jenkins --yes # sometime the first apt-get install jenkins 
 #We need to install workflow-aggregator so all the options in the auth matrix are valid
 plugins=(azure-vm-agents windows-azure-storage matrix-auth workflow-aggregator)
 for plugin in "${plugins[@]}"; do
-  curl --silent "${artifacts_location}/jenkins/run-cli-command.sh${artifacts_location_sas_token}" | sudo bash -s -- -c "install-plugin $plugin -deploy"
+  run_util_script "jenkins/run-cli-command.sh" -c "install-plugin $plugin -deploy"
 done
 
 #allow anonymous read access
@@ -197,7 +208,7 @@ echo "${nginx_reverse_proxy_conf}" | sudo tee /etc/nginx/sites-enabled/default >
 sudo sed -i "s|.*server_tokens.*|server_tokens off;|" /etc/nginx/nginx.conf
 
 #install jenkins-on-azure web page
-curl --silent "${artifacts_location}/jenkins/jenkins-on-azure/install-web-page.sh${artifacts_location_sas_token}" | sudo bash -s -- -u "${jenkins_fqdn}"  -l "${azure_web_page_location}" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
+run_util_script "jenkins/jenkins-on-azure/install-web-page.sh" -u "${jenkins_fqdn}"  -l "${azure_web_page_location}" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
 
 #restart nginx
 sudo service nginx restart
