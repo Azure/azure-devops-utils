@@ -13,7 +13,6 @@ Arguments
   --user_name|-un                    [Required] : Admin user name for your Spinnaker VM and Kubernetes cluster
   --resource_group|-rg               [Required] : Resource group containing your Kubernetes cluster
   --master_fqdn|-mf                  [Required] : Master FQDN of your Kubernetes cluster
-  --master_count|-mc                 [Required] : Master count of your Kubernetes cluster
   --storage_account_name|-san        [Required] : Storage Account name used for Spinnaker's persistent storage
   --storage_account_key|-sak         [Required] : Storage Account key used for Spinnaker's persistent storage
   --azure_container_registry|-acr    [Required] : Azure Container Registry url
@@ -89,10 +88,6 @@ do
       master_fqdn="$1"
       shift
       ;;
-    --master_count|-mc)
-      master_count="$1"
-      shift
-      ;;
     --storage_account_name|-san)
       storage_account_name="$1"
       shift
@@ -150,7 +145,6 @@ throw_if_empty --tenant_id $tenant_id
 throw_if_empty --user_name $user_name
 throw_if_empty --resource_group $resource_group
 throw_if_empty --master_fqdn $master_fqdn
-throw_if_empty --master_count $master_count
 throw_if_empty --storage_account_name $storage_account_name
 throw_if_empty --storage_account_key $storage_account_key
 throw_if_empty --azure_container_registry $azure_container_registry
@@ -170,19 +164,20 @@ if [ "$front50_port" != "8080" ]; then
 fi
 
 # Install Azure cli
-if !(command -v azure >/dev/null); then
-  curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
-  sudo apt-get -y install nodejs
-  sudo npm install -g azure-cli
+if !(command -v az >/dev/null); then
+  sudo apt-get update && sudo apt-get install -y libssl-dev libffi-dev python-dev
+  echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/azure-cli/ wheezy main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
+  sudo apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893
+  sudo apt-get install -y apt-transport-https
+  sudo apt-get -y update && sudo apt-get install -y azure-cli
 fi
 
 # Login to azure cli using service principal
-azure telemetry --disable
-azure login --service-principal -u $app_id -p $app_key --tenant $tenant_id
-azure account set $subscription_id
+az login --service-principal -u "$app_id" -p "$app_key" --tenant "$tenant_id"
+az account set --subscription "$subscription_id"
 
 # Copy kube config to this VM
-run_util_script "spinnaker/copy_kube_config/copy_kube_config.sh" -un "$user_name" -rg "$resource_group" -mf "$master_fqdn" -mc "$master_count"
+run_util_script "spinnaker/copy_kube_config/copy_kube_config.sh" -un "$user_name" -rg "$resource_group" -mf "$master_fqdn"
 
 # If targeting docker, we have to explicitly add the repository to the config. For private registries, 
 # there's no need because Spinnaker can dynamically retrieve the entire catalog of a registry.
