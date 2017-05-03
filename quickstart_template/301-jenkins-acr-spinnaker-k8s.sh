@@ -14,7 +14,6 @@ Arguments
   --git_repository|-gr               [Required] : Git URL with a Dockerfile in it's root
   --resource_group|-rg               [Required] : Resource group containing your Kubernetes cluster
   --master_fqdn|-mf                  [Required] : Master FQDN of your Kubernetes cluster
-  --master_count|-mc                 [Required] : Master count of your Kubernetes cluster
   --storage_account_name|-san        [Required] : Storage Account name used for Spinnaker's persistent storage
   --storage_account_key|-sak         [Required] : Storage Account key used for Spinnaker's persistent storage
   --azure_container_registry|-acr    [Required] : Azure Container Registry url
@@ -89,10 +88,6 @@ do
       master_fqdn="$1"
       shift
       ;;
-    --master_count|-mc)
-      master_count="$1"
-      shift
-      ;;
     --storage_account_name|-san)
       storage_account_name="$1"
       shift
@@ -143,7 +138,6 @@ throw_if_empty --user_name $user_name
 throw_if_empty --git_repository $git_repository
 throw_if_empty --resource_group $resource_group
 throw_if_empty --master_fqdn $master_fqdn
-throw_if_empty --master_count $master_count
 throw_if_empty --storage_account_name $storage_account_name
 throw_if_empty --storage_account_key $storage_account_key
 throw_if_empty --azure_container_registry $azure_container_registry
@@ -156,7 +150,7 @@ pipeline_registry="$azure_container_registry"
 front50_port="8081"
 
 # Configure Spinnaker (do this first because the default InstallSpinnaker.sh script sets up front50 on port 8080 and that might fail if we did Jenkins first)
-run_util_script "quickstart_template/201-spinnaker-acr-k8s.sh" -ai "$app_id" -ak "$app_key" -si "$subscription_id" -ti "$tenant_id" -un "$user_name" -rg "$resource_group" -mf "$master_fqdn" -mc "$master_count" -san "$storage_account_name" -sak "$storage_account_key" -acr "$azure_container_registry" -ikp "$include_kubernetes_pipeline" -prg "$pipeline_registry" -prp "$docker_repository" -pp "$pipeline_port" -fp "$front50_port" -al "$artifacts_location" -st "$artifacts_location_sas_token"
+run_util_script "quickstart_template/201-spinnaker-acr-k8s.sh" -ai "$app_id" -ak "$app_key" -si "$subscription_id" -ti "$tenant_id" -un "$user_name" -rg "$resource_group" -mf "$master_fqdn" -san "$storage_account_name" -sak "$storage_account_key" -acr "$azure_container_registry" -ikp "$include_kubernetes_pipeline" -prg "$pipeline_registry" -prp "$docker_repository" -pp "$pipeline_port" -fp "$front50_port" -al "$artifacts_location" -st "$artifacts_location_sas_token"
 
 # Configure Jenkins
 run_util_script "quickstart_template/201-jenkins-acr.sh" -u "$user_name" -g "$git_repository" -r "https://$azure_container_registry" -ru "$app_id" -rp "$app_key" -rr "$docker_repository" -jf "$jenkins_fqdn" -al "$artifacts_location" -st "$artifacts_location_sas_token"
