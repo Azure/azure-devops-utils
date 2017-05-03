@@ -22,6 +22,17 @@ function throw_if_empty() {
   fi
 }
 
+function run_util_script() {
+  local script_path="$1"
+  shift
+  curl --silent "${artifacts_location}${script_path}${artifacts_location_sas_token}" | sudo bash -s -- "$@"
+  local return_value=$?
+  if [ $return_value -ne 0 ]; then
+    >&2 echo "Failed while executing script '$script_path'."
+    exit $return_value
+  fi
+}
+
 #Set defaults
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
 
@@ -82,4 +93,4 @@ sudo sed -i "s|REPLACE_STORAGE_ACCOUNT_NAME|${storage_account_name}|" $front50_c
 sudo sed -i "s|REPLACE_STORAGE_ACCOUNT_KEY|${storage_account_key}|" $front50_config_file
 
 # Restart front50 so that config changes take effect
-curl --silent "${artifacts_location}spinnaker/await_restart_service/await_restart_service.sh${artifacts_location_sas_token}" | sudo bash -s -- --service front50
+run_util_script "spinnaker/await_restart_service/await_restart_service.sh" --service front50

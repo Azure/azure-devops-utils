@@ -35,6 +35,17 @@ function throw_if_empty() {
   fi
 }
 
+function run_util_script() {
+  local script_path="$1"
+  shift
+  curl --silent "${artifacts_location}${script_path}${artifacts_location_sas_token}" | sudo bash -s -- "$@"
+  local return_value=$?
+  if [ $return_value -ne 0 ]; then
+    >&2 echo "Failed while executing script '$script_path'."
+    exit $return_value
+  fi
+}
+
 #set defaults
 credentials_id="docker_credentials"
 credentials_desc="Docker Container Registry Credentials"
@@ -181,21 +192,21 @@ job_xml=${job_xml//'{insert-groovy-script}'/"$(curl -s ${artifacts_location}/jen
 echo "${job_xml}" > job.xml
 
 #install the required plugins
-curl --silent "${artifacts_location}/jenkins/run-cli-command.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "$jenkins_url" -ju "$jenkins_username" -jp "$jenkins_password" -c "install-plugin credentials -deploy"
+run_util_script "jenkins/run-cli-command.sh" -j "$jenkins_url" -ju "$jenkins_username" -jp "$jenkins_password" -c "install-plugin credentials -deploy"
 plugins=(docker-workflow git)
 for plugin in "${plugins[@]}"; do
-  curl --silent "${artifacts_location}/jenkins/run-cli-command.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "$jenkins_url" -ju "$jenkins_username" -jp "$jenkins_password" -c "install-plugin $plugin -restart"
+  run_util_script "jenkins/run-cli-command.sh" -j "$jenkins_url" -ju "$jenkins_username" -jp "$jenkins_password" -c "install-plugin $plugin -restart"
 done
 
 #wait for instance to be back online
-curl --silent "${artifacts_location}/jenkins/run-cli-command.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "$jenkins_url" -ju "$jenkins_username" -jp "$jenkins_password" -c "version"
+run_util_script "jenkins/run-cli-command.sh" -j "$jenkins_url" -ju "$jenkins_username" -jp "$jenkins_password" -c "version"
 
 #add user/pwd
 echo "${credentials_xml}" > credentials.xml
-curl --silent "${artifacts_location}/jenkins/run-cli-command.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "$jenkins_url" -ju "$jenkins_username" -jp "$jenkins_password" -c 'create-credentials-by-xml SystemCredentialsProvider::SystemContextResolver::jenkins (global)' -cif "credentials.xml"
+run_util_script "jenkins/run-cli-command.sh" -j "$jenkins_url" -ju "$jenkins_username" -jp "$jenkins_password" -c 'create-credentials-by-xml SystemCredentialsProvider::SystemContextResolver::jenkins (global)' -cif "credentials.xml"
 
 #add job
-curl --silent "${artifacts_location}/jenkins/run-cli-command.sh${artifacts_location_sas_token}" | sudo bash -s -- -j "$jenkins_url" -ju "$jenkins_username" -jp "$jenkins_password" -c "create-job ${job_short_name}" -cif "job.xml"
+run_util_script "jenkins/run-cli-command.sh" -j "$jenkins_url" -ju "$jenkins_username" -jp "$jenkins_password" -c "create-job ${job_short_name}" -cif "job.xml"
 
 #cleanup
 rm credentials.xml
