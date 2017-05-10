@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.10">
+  <actions/>
+  <description>{insert-job-description}</description>
+  <displayName>{insert-job-display-name}</displayName>
+  <keepDependencies>false</keepDependencies>
+  <properties />
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.27">
+    <script>node {
+    stage ('build') {
+        git  '{insert-git-url}'
+        sh './gradlew clean packDeb'
+    }
+    
+    stage ('publish to aptly') {
+        sh 'aptly repo add {insert-repository-name} build/distributions/*.deb'
+        sh 'aptly publish update -skip-signing=true trusty'
+    }
+    
+    stage ('archive') {
+        archiveArtifacts 'build/distributions/*.deb'
+    }
+}</script>
+    <sandbox>true</sandbox>
+  </definition>
+  <triggers/>
+</flow-definition>
