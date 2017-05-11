@@ -171,6 +171,9 @@ EOF
 
 wget -q -O - https://pkg.jenkins.io/debian/jenkins-ci.org.key | sudo apt-key add -
 sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/azure-cli/ wheezy main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
+sudo apt-key adv --keyserver packages.microsoft.com --recv-keys 417A0893
+sudo apt-get install apt-transport-https
 sudo apt-get update --yes
 sudo apt-get install jenkins --yes
 sudo apt-get install jenkins --yes # sometime the first apt-get install jenkins command fails, so we try it twice
@@ -212,3 +215,7 @@ run_util_script "jenkins/jenkins-on-azure/install-web-page.sh" -u "${jenkins_fqd
 
 #restart nginx
 sudo service nginx restart
+
+#install common tools
+sudo apt-get install git --yes
+sudo apt-get install azure-cli --yes
