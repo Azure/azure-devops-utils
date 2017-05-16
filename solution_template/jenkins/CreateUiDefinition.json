@@ -181,9 +181,11 @@
       "dnsPrefix": "[steps('firstStep').publicIP.domainNameLabel]",
       "publicIPName": "[steps('firstStep').publicIP.name]",
       "publicIPNewOrExisting": "[steps('firstStep').publicIP.newOrExistingOrNone]",
+      "publicIPResourceGroup": "[steps('firstStep').publicIP.resourceGroup]",
       "storageAccountName": "[steps('firstStep').storageAccount.name]",
       "storageAccountNewOrExisting": "[steps('firstStep').storageAccount.newOrExisting]",
       "storageAccountType": "[steps('firstStep').storageAccount.type]",
+      "storageAccountResourceGroup": "[steps('firstStep').storageAccount.resourceGroup]",
       "vmName": "[basics('vmName')]",
       "vmSize": "[steps('firstStep').vmSize]"
     }
