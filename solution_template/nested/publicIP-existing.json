@@ -4,7 +4,7 @@
   "outputs": {
     "fqdn": {
       "type": "string",
-      "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses',parameters('publicIPName')),'2016-03-30').dnsSettings.fqdn]"
+      "value": "[reference(resourceId(parameters('publicIPResourceGroup'),'Microsoft.Network/publicIPAddresses',parameters('publicIPName')),'2016-03-30').dnsSettings.fqdn]"
     }
   },
   "parameters": {
@@ -15,6 +15,9 @@
       "type": "string"
     },
     "publicIPName": {
+      "type": "string"
+    },
+    "publicIPResourceGroup": {
       "type": "string"
     }
   },

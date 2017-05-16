@@ -6,7 +6,7 @@
       "metadata": {
         "description": "Artifacts location"
       },
-      "defaultValue": "https://raw.githubusercontent.com/Azure/azure-devops-utils/v0.14.0/",
+      "defaultValue": "https://raw.githubusercontent.com/Azure/azure-devops-utils/v0.16.0/",
       "type": "string"
     },
     "_artifactsLocationSasToken": {
@@ -60,6 +60,12 @@
       },
       "type": "string"
     },
+    "publicIPResourceGroup": {
+      "metadata": {
+        "description": "The Public IP Resource Group"
+      },
+      "type": "string"
+    },
     "storageAccountName": {
       "metadata": {
         "description": "Storage Account Name"
@@ -76,6 +82,12 @@
       "defaultValue": "Standard_LRS",
       "metadata": {
         "description": "Storage Account Type"
+      },
+      "type": "string"
+    },
+    "storageAccountResourceGroup": {
+      "metadata": {
+        "description": "The Storage Account Resource Group"
       },
       "type": "string"
     },
@@ -128,6 +140,9 @@
           },
           "storageAccountLocation": {
             "value": "[resourceGroup().location]"
+          },
+          "storageAccountResourceGroup": {
+            "value": "[parameters('storageAccountResourceGroup')]"
           }
         },
         "templateLink": {
@@ -152,6 +167,9 @@
           },
           "dnsPrefix": {
             "value": "[parameters('dnsPrefix')]"
+          },
+          "publicIPResourceGroup": {
+            "value": "[parameters('publicIPResourceGroup')]"
           }
         },
         "templateLink": {
