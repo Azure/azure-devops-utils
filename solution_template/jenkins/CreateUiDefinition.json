@@ -12,8 +12,8 @@
         "toolTip": "",
         "constraints": {
           "required": true,
-          "regex": "^[a-z0-9A-Z]{1,10}$",
-          "validationMessage": "Only alphanumeric characters are allowed, and the value must be 1-10 characters long."
+          "regex": "^[a-z0-9A-Z]{1,54}$",
+          "validationMessage": "Only alphanumeric characters are allowed, and the value must be 1-54 characters long."
         },
         "visible": true
       },
