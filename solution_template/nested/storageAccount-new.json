@@ -4,7 +4,7 @@
   "outputs": {
     "primaryEndpointBlob": {
       "type": "string",
-      "value": "[reference(resourceId(parameters('storageAccountResourceGroup'),'Microsoft.Storage/storageAccounts',parameters('storageAccountName')),'2016-01-01').primaryEndpoints.blob]"
+      "value": "[reference(resourceId('Microsoft.Storage/storageAccounts',parameters('storageAccountName')),'2016-01-01').primaryEndpoints.blob]"
     }
   },
   "parameters": {
