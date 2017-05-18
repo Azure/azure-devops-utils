@@ -6,7 +6,7 @@ This repository contains utility scripts to run/configure DevOp systems in Azure
 ## Contents
 * Common
   * [create-service-principal.sh](bash/create-service-principal.sh): Creates Azure Service Principal credentials.
-  * [deploy-interactive.sh](quickstart_template/deploy-interactive): An interactive script that deploys an instance of Jenkins and Spinnaker on an Ubuntu 14.04 VM in Azure.
+  * [deploy-dev-ops.sh](deploy-dev-ops/): Deploys a DevOps pipeline targeting either a Kubernetes cluster or VM Scale Sets.
 * Jenkins
   * [basic-docker-build.groovy](jenkins/basic-docker-build.groovy): Sample Jenkins pipeline that clones a git repository, builds the docker container defined in the Docker file and pushes that container to a private container registry.
   * [add-docker-build-job.sh](jenkins/add-docker-build-job.sh): Adds a Docker Build job in an existing Jenkins instance.
