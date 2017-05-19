@@ -8,7 +8,7 @@
 function print_usage() {
   cat <<EOF
 Command
-  $0
+  ./deploy-dev-ops.sh
 
 Arguments:
   --subscription_id|-s   : Subscription id, optional if a default is already set in the Azure CLI
