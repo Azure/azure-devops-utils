@@ -102,6 +102,13 @@
         "description": "Virtual Machine Size"
       },
       "type": "string"
+    },
+    "location": {
+      "metadata": {
+        "description": "Azure location where to deploy the resources"
+      },
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
     }
   },
   "variables": {
@@ -139,7 +146,7 @@
             "value": "[parameters('storageAccountType')]"
           },
           "storageAccountLocation": {
-            "value": "[resourceGroup().location]"
+            "value": "[parameters('location')]"
           },
           "storageAccountResourceGroup": {
             "value": "[parameters('storageAccountResourceGroup')]"
@@ -163,7 +170,7 @@
             "value": "[parameters('publicIPName')]"
           },
           "publicIPLocation": {
-            "value": "[resourceGroup().location]"
+            "value": "[parameters('location')]"
           },
           "dnsPrefix": {
             "value": "[parameters('dnsPrefix')]"
@@ -181,7 +188,7 @@
     },
     {
       "apiVersion": "2015-06-15",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "name": "[variables('frontEndNSGName')]",
       "properties": {
         "securityRules": [
@@ -225,7 +232,7 @@
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkSecurityGroups', variables('frontEndNSGName'))]"
       ],
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "name": "[variables('virtualNetworkName')]",
       "properties": {
         "addressSpace": {
@@ -256,7 +263,7 @@
         "[resourceId('Microsoft.Network/virtualNetworks', variables('virtualNetworkName'))]",
         "[resourceId('Microsoft.Resources/deployments', variables('publicIPDeploymentName'))]"
       ],
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "name": "[variables('nicName')]",
       "properties": {
         "ipConfigurations": [
@@ -310,7 +317,7 @@
             "value": "[variables('ubuntuSku')]"
           },
           "vmLocation": {
-            "value": "[resourceGroup().location]"
+            "value": "[parameters('location')]"
           },
           "vmName": {
             "value": "[parameters('vmName')]"
@@ -331,7 +338,7 @@
       "dependsOn": [
         "[resourceId('Microsoft.Resources/deployments', variables('vmDeploymentName'))]"
       ],
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "name": "[concat(parameters('vmName'), '/Init')]",
       "properties": {
         "autoUpgradeMinorVersion": true,
