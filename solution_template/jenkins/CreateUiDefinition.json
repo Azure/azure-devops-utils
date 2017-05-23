@@ -96,12 +96,17 @@
               "Standard_DS1_v2",
               "Standard_DS11_v2"
             ],
-            "osPlatform": "Linux",
-            "imageReference": {
-              "publisher": "Canonical",
-              "offer": "UbuntuServer",
-              "sku": "14.04.5-LTS"
+            "constraints": {
+              "allowedSizes": [
+                "Standard_DS1_v2",
+                "Standard_DS2_v2",
+                "Standard_DS3_v2",
+                "Standard_DS4_v2",
+                "Standard_DS5_v2",
+                "Standard_DS11_v2"
+              ]
             },
+            "osPlatform": "Linux",
             "count": 1,
             "visible": true
           },
@@ -187,7 +192,8 @@
       "storageAccountType": "[steps('firstStep').storageAccount.type]",
       "storageAccountResourceGroup": "[steps('firstStep').storageAccount.resourceGroup]",
       "vmName": "[basics('vmName')]",
-      "vmSize": "[steps('firstStep').vmSize]"
+      "vmSize": "[steps('firstStep').vmSize]",
+      "location": "[location()]"
     }
   }
 }
