@@ -24,7 +24,7 @@ This must be executed on a machine with an existing Spinnaker instance.
 
 ## Example usage
 ```bash
-./configure_k8s.sh --app_id "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" --app_key "password" --tenant_id "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" --subscription_id "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" --resource-group "devopsgroup" --vault_name "devopsVault" --packer_storage_account "packerStorage" --jenkins_username "jenkins" --jenkins_password "password" --vm_fqdn "devops.westus.cloudapp.azure.com"
+./configure_vmss.sh --app_id "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" --app_key "password" --tenant_id "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" --subscription_id "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" --resource-group "devopsgroup" --vault_name "devopsVault" --packer_storage_account "packerStorage" --jenkins_username "jenkins" --jenkins_password "password" --vm_fqdn "devops.westus.cloudapp.azure.com"
 ```
 
 ## Questions/Comments? azdevopspub@microsoft.com
