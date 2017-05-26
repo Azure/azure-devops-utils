@@ -183,10 +183,15 @@ else
   sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
 fi
 
+sudo add-apt-repository ppa:openjdk-r/ppa --yes
+
 echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/azure-cli/ wheezy main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
 sudo apt-key adv --keyserver packages.microsoft.com --recv-keys 417A0893
 sudo apt-get install apt-transport-https
 sudo apt-get update --yes
+
+#install openjdk8
+sudo apt-get install openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk --yes
 
 #install jenkins
 sudo apt-get install jenkins --yes
