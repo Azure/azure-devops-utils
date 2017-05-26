@@ -22,6 +22,7 @@ Arguments:
   --tenant_id|-ti        : Tenant Id (only necessary if you want this script to log in to the cli with the Service Principal credentials)
   --password|-p          : Password for the DevOps VM (only used for the 'vmss' scenario)
   --ssh_public_key|-spk  : SSH Public Key for the DevOps VM (only used for the 'k8s' scenario), defaulted to '~/.ssh/id_rsa.pub'
+  --git_repository|-gr   : Git repository with a Dockerfile at the root (only used for the 'k8s' scenario), defaulted to 'https://github.com/azure-devops/spin-kub-demo'
   --quiet|-q             : If this flag is passed, the script will not prompt for any values. An error will be thrown if a required parameter is not specified.
 
 Example Usage:
@@ -361,6 +362,9 @@ do
     --ssh_public_key|-spk)
       ssh_public_key="$1"
       shift;;
+    --git_repository|-gr)
+      git_repository="$1"
+      shift;;
     --quiet|-q)
       quiet=true;;
     --help|-help|-h)
@@ -447,6 +451,17 @@ if [ "$deploy_target" == "k8s" ]; then
     done
   fi
 
+  default_git_repository=https://github.com/azure-devops/spin-kub-demo
+  if [ -z "$git_repository" ] && [[ "$quiet" != true ]]; then
+    >&2 echo
+    read -rp "===> Enter a git repository with a Dockerfile at the root: (leave blank to use '$default_git_repository'): "
+    git_repository="$REPLY"
+  fi
+
+  if [ -z "$git_repository" ]; then
+    git_repository="$default_git_repository"
+  fi
+
   template_uri="https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/301-jenkins-acr-spinnaker-k8s/azuredeploy.json"
   parameters=$(cat <<EOF
 {
@@ -464,6 +479,9 @@ if [ "$deploy_target" == "k8s" ]; then
   },
   "servicePrincipalAppKey": {
     "value": "$app_key"
+  },
+  "gitRepository": {
+    "value": "$git_repository"
   }
 }
 EOF
