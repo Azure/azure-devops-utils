@@ -16,6 +16,7 @@ This script deploys a DevOps pipeline targeting either a Kubernetes cluster or V
 | --tenant_id<br/>-ti        | Tenant Id (only necessary if you want this script to log in to the cli with the Service Principal credentials) |
 | --password<br/>-p          | Password for the DevOps VM (only used for the 'vmss' scenario) |
 | --ssh_public_key<br/>-spk  | SSH Public Key for the DevOps VM (only used for the 'k8s' scenario), defaulted to '~/.ssh/id_rsa.pub' |
+| --git_repository<br/>-gr   | Git repository with a Dockerfile at the root (only used for the 'k8s' scenario), defaulted to 'https://github.com/azure-devops/spin-kub-demo' |
 | --quiet<br/>-q             | If this flag is passed, the script will not prompt for any values. An error will be thrown if a required parameter is not specified. |
 
 ## Example usage
