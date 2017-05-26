@@ -7,6 +7,7 @@ Command
 Arguments
   --jenkins_fqdn|-jf       [Required] : Jenkins FQDN
   --vm_private_ip|-pi                 : The VM private ip used to configure Jenkins URL. If missing, jenkins_fqdn will be used instead
+  --jenkins_release_type|-jrt         : The Jenkins release type (LTS or weekly). By default it's set to LTS
   --artifacts_location|-al            : Url used to reference other scripts/artifacts.
   --sas_token|-st                     : A sas token needed if the artifacts location is private.
 EOF
@@ -36,6 +37,7 @@ function run_util_script() {
 #defaults
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
 azure_web_page_location="/usr/share/nginx/azure"
+jenkins_release_type="LTS"
 
 while [[ $# > 0 ]]
 do
@@ -48,6 +50,10 @@ do
       ;;
     --vm_private_ip|-pi)
       vm_private_ip="$1"
+      shift
+      ;;
+    --jenkins_release_type|-jrt)
+      jenkins_release_type="$1"
       shift
       ;;
     --artifacts_location|-al)
@@ -69,6 +75,7 @@ do
 done
 
 throw_if_empty --jenkins_fqdn $jenkins_fqdn
+throw_if_empty --jenkins_release_type $jenkins_release_type
 
 if [ -z "$vm_private_ip" ]; then
     #use port 80 for public fqdn
@@ -167,14 +174,21 @@ server {
 EOF
 )
 
-#install jenkins
-
+#update apt repositories
 wget -q -O - https://pkg.jenkins.io/debian/jenkins-ci.org.key | sudo apt-key add -
-sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+
+if [ "$jenkins_release_type" != "LTS" ]; then
+  sudo sh -c 'echo deb http://pkg.jenkins.io/debian binary/ > /etc/apt/sources.list.d/jenkins.list'
+else
+  sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+fi
+
 echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/azure-cli/ wheezy main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
 sudo apt-key adv --keyserver packages.microsoft.com --recv-keys 417A0893
 sudo apt-get install apt-transport-https
 sudo apt-get update --yes
+
+#install jenkins
 sudo apt-get install jenkins --yes
 sudo apt-get install jenkins --yes # sometime the first apt-get install jenkins command fails, so we try it twice
 
