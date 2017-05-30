@@ -76,6 +76,10 @@ done
 
 throw_if_empty --jenkins_fqdn $jenkins_fqdn
 throw_if_empty --jenkins_release_type $jenkins_release_type
+if [[ "$jenkins_release_type" != "LTS" ]] && [[ "$jenkins_release_type" != "weekly" ]]; then
+  echo "Parameter jenkins_release_type can only be 'LTS' or 'weekly'! Current value is '$jenkins_release_type'"
+  exit 1
+fi
 
 if [ -z "$vm_private_ip" ]; then
     #use port 80 for public fqdn
