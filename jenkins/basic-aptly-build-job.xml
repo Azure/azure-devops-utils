@@ -13,8 +13,8 @@
     }
     
     stage ('publish to aptly') {
-        sh 'aptly repo add {insert-repository-name} build/distributions/*.deb'
-        sh 'aptly publish update -skip-signing=true trusty'
+        sh 'aptly repo add -force-replace {insert-repository-name} build/distributions/*.deb'
+        sh 'aptly publish update -force-overwrite -skip-signing=true trusty'
     }
     
     stage ('archive') {
