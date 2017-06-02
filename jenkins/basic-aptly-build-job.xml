@@ -9,13 +9,7 @@
     <script>node {
     stage ('set version number') {
         git  '{insert-git-url}'
-        def userInput = input (
-            id: 'userInput', message: 'Release number', parameters: [
-                [$class: 'TextParameterDefinition', defaultValue: '1', description: 'Version of the package', name: 'version'],
-                [$class: 'TextParameterDefinition', defaultValue: '5', description: 'Version of the package', name: 'release']
-            ])
-        sh 'sed -i \'/^  version/s/1/'+userInput['version']+'/\' build.gradle'
-        sh 'sed -i \'/^  release/s/5/'+userInput['release']+'/\' build.gradle'
+        sh 'sed -i \'/^  release/s/5/'+"${env.BUILD_NUMBER}"+'/\' build.gradle'
     }
 
     stage ('build') {
