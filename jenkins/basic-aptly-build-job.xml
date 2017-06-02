@@ -14,8 +14,8 @@
                 [$class: 'TextParameterDefinition', defaultValue: '1', description: 'Version of the package', name: 'version'],
                 [$class: 'TextParameterDefinition', defaultValue: '5', description: 'Version of the package', name: 'release']
             ])
-        sh 'sed -i \'s/##VERSION##/'+userInput['version']+'/g\' build.gradle'
-        sh 'sed -i \'s/##RELEASE##/'+userInput['release']+'/g\' build.gradle'
+        sh 'sed -i \'/^  version/s/1/'+userInput['version']+'/\' build.gradle'
+        sh 'sed -i \'/^  release/s/5/'+userInput['release']+'/\' build.gradle'
     }
 
     stage ('build') {
