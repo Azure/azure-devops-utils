@@ -7,8 +7,12 @@
   <properties />
   <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.27">
     <script>node {
-    stage ('build') {
+    stage ('set version number') {
         git  '{insert-git-url}'
+        sh 'sed -i \'/^  release/s/5/'+"${env.BUILD_NUMBER}"+'/\' build.gradle'
+    }
+
+    stage ('build') {
         sh './gradlew clean packDeb'
     }
     
