@@ -60,7 +60,7 @@ function validate_az_cli() {
   fi
 
   if !(command -v az >/dev/null); then
-    log_error "Did not find Azure CLI 2.0. Run 'curl -L https://aka.ms/InstallAzureCli | bash' and verify 'az --verison' succeeds."
+    log_error "Did not find Azure CLI 2.0. Run 'curl -L https://aka.ms/InstallAzureCli | bash' and verify 'az --verison' succeeds. See here for more information: https://docs.microsoft.com/cli/azure/install-azure-cli"
     exit -1
   fi
 
