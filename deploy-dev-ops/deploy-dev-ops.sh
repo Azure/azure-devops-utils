@@ -236,7 +236,13 @@ function validate_or_create_resource_group() {
 
         local min=0
         local max=$((count-1))
-        local default=${locations[0]}
+
+        local default="westus"
+        if [[ " ${locations[*]} " != *" $default "* ]]; then
+          # Use the first location if westus isn't available
+          local default=${locations[0]}
+        fi
+
         while [ -z "$location" ]; do
           read -rp "===> Enter an integer between $min and $max (leave blank to use '$default'): "
           if [ -z "$REPLY" ]; then
