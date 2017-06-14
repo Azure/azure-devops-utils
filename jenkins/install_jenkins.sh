@@ -7,7 +7,7 @@ Command
 Arguments
   --jenkins_fqdn|-jf       [Required] : Jenkins FQDN
   --vm_private_ip|-pi                 : The VM private ip used to configure Jenkins URL. If missing, jenkins_fqdn will be used instead
-  --jenkins_release_type|-jrt         : The Jenkins release type (LTS or weekly). By default it's set to LTS
+  --jenkins_release_type|-jrt         : The Jenkins release type (LTS or weekly or verified). By default it's set to LTS
   --artifacts_location|-al            : Url used to reference other scripts/artifacts.
   --sas_token|-st                     : A sas token needed if the artifacts location is private.
 EOF
@@ -76,8 +76,8 @@ done
 
 throw_if_empty --jenkins_fqdn $jenkins_fqdn
 throw_if_empty --jenkins_release_type $jenkins_release_type
-if [[ "$jenkins_release_type" != "LTS" ]] && [[ "$jenkins_release_type" != "weekly" ]]; then
-  echo "Parameter jenkins_release_type can only be 'LTS' or 'weekly'! Current value is '$jenkins_release_type'"
+if [[ "$jenkins_release_type" != "LTS" ]] && [[ "$jenkins_release_type" != "weekly" ]] && [[ "$jenkins_release_type" != "verified" ]]; then
+  echo "Parameter jenkins_release_type can only be 'LTS' or 'weekly' or 'verified'! Current value is '$jenkins_release_type'"
   exit 1
 fi
 
@@ -181,7 +181,7 @@ EOF
 #update apt repositories
 wget -q -O - https://pkg.jenkins.io/debian/jenkins-ci.org.key | sudo apt-key add -
 
-if [ "$jenkins_release_type" != "LTS" ]; then
+if [ "$jenkins_release_type" == "weekly" ]; then
   sudo sh -c 'echo deb http://pkg.jenkins.io/debian binary/ > /etc/apt/sources.list.d/jenkins.list'
 else
   sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
@@ -198,8 +198,21 @@ sudo apt-get update --yes
 sudo apt-get install openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk --yes
 
 #install jenkins
-sudo apt-get install jenkins --yes
-sudo apt-get install jenkins --yes # sometime the first apt-get install jenkins command fails, so we try it twice
+if [[ ${jenkins_release_type} == 'verified' ]]; then
+  jenkins_version=$(curl --silent "${artifacts_location}/jenkins/jenkins-verified-ver")
+  deb_file=jenkins_${jenkins_version}_all.deb
+  wget -q https://pkg.jenkins.io/debian-stable/binary/${deb_file}
+  if [[ -f ${deb_file} ]]; then
+    sudo dpkg -i ${deb_file}
+    sudo apt-get install -f --yes
+  else
+    echo "Failed to download ${deb_file}. The initialization is terminated!"
+    exit -1
+  fi
+else
+  sudo apt-get install jenkins --yes
+  sudo apt-get install jenkins --yes # sometime the first apt-get install jenkins command fails, so we try it twice
+fi
 
 #We need to install workflow-aggregator so all the options in the auth matrix are valid
 plugins=(azure-vm-agents windows-azure-storage matrix-auth workflow-aggregator)
