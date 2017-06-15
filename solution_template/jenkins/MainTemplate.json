@@ -6,7 +6,7 @@
       "metadata": {
         "description": "Artifacts location"
       },
-      "defaultValue": "https://raw.githubusercontent.com/Azure/azure-devops-utils/v0.16.0/",
+      "defaultValue": "https://raw.githubusercontent.com/Azure/azure-devops-utils/master/",
       "type": "string"
     },
     "_artifactsLocationSasToken": {
@@ -112,7 +112,7 @@
     },
     "jenkinsReleaseType": {
       "metadata": {
-        "description": "Jenkins release type (LTS or weekly)"
+        "description": "Jenkins release type (LTS or weekly or verified)"
       },
       "type": "string",
       "defaultValue": "LTS"
@@ -131,7 +131,7 @@
     "templateUrlIP": "[concat(variables('nestedUrl'),'/publicIP-',parameters('publicIPNewOrExisting'),'.json',parameters('_artifactsLocationSasToken'))]",
     "templateUrlStorage": "[concat(variables('nestedUrl'),'/storageAccount-',parameters('storageAccountNewOrExisting'),'.json',parameters('_artifactsLocationSasToken'))]",
     "templateUrlVM": "[concat(variables('nestedUrl'),'/VM-',parameters('authenticationType'),'.json',parameters('_artifactsLocationSasToken'))]",
-    "ubuntuSku": "14.04.5-LTS",
+    "ubuntuSku": "16.04-LTS",
     "virtualNetworkName": "[concat(parameters('vmName'), 'VNET')]",
     "virtualNetworkPrefix": "10.0.0.0/16",
     "vmDeploymentName": "[concat(parameters('vmName'), '-VM-deploy')]",
