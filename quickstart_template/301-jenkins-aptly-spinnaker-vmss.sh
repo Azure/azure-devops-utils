@@ -111,13 +111,46 @@ throw_if_empty packer_storage_account $packer_storage_account
 throw_if_empty vm_fqdn $vm_fqdn
 throw_if_empty region $region
 
-run_util_script "spinnaker/install_spinnaker/install_spinnaker.sh" -san "$storage_account_name" -sak "$storage_account_key"  -al "$artifacts_location" -st "$artifacts_location_sas_token"
+default_hal_config="/home/$jenkins_username/.hal/default"
 
-echo "Reconfiguring front50 to use ${front50_port} so that it doesn't conflict with Jenkins..."
-sudo sed -i "s|front50:|front50:\n    port: $front50_port|" /opt/spinnaker/config/spinnaker-local.yml
-sudo service spinnaker restart # We have to restart all services so that they know how to communicate to front50
+run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$jenkins_username"
 
-run_util_script "spinnaker/configure_vmss/configure_vmss.sh" -ai "${app_id}" -ak "${app_key}" -ti "${tenant_id}" -si "${subscription_id}" -rg "${resource_group}" -vn "${vault_name}" -psa "${packer_storage_account}" -ju "${jenkins_username}" -jp "${jenkins_password}" -vf "${vm_fqdn}" -r "$region" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
+# Change front50 port so it doesn't conflict with Jenkins
+front50_settings="$default_hal_config/service-settings/front50.yml"
+sudo -u $jenkins_username mkdir -p $(dirname "$front50_settings")
+sudo -u $jenkins_username touch "$front50_settings"
+echo "port: $front50_port" > "$front50_settings"
+
+# Configure Azure provider for Spinnaker
+echo "$app_key" | hal config provider azure account add my-azure-account \
+  --client-id "$app_id" \
+  --tenant-id "$tenant_id" \
+  --subscription-id "$subscription_id" \
+  --default-key-vault "$vault_name" \
+  --default-resource-group "$resource_group" \
+  --packer-resource-group "$resource_group" \
+  --packer-storage-account "$packer_storage_account" \
+  --app-key
+hal config provider azure enable
+
+# Configure Rosco (these params are not supported by Halyard yet)
+rosco_config="$default_hal_config/profiles/rosco-local.yml"
+sudo -u $jenkins_username mkdir -p $(dirname "$rosco_config")
+sudo -u $jenkins_username touch "$rosco_config"
+cat <<EOF > "$rosco_config"
+debianRepository: http://ppa.launchpad.net/openjdk-r/ppa/ubuntu trusty main;http://$vm_fqdn:9999 trusty main
+defaultCloudProviderType: azure
+EOF
+
+# Configure Jenkins for Spinnaker
+echo "$jenkins_password" | hal config ci jenkins master add Jenkins \
+    --address "http://localhost:8080" \
+    --username "$jenkins_username" \
+    --password
+hal config ci jenkins enable
+
+# Deploy Spinnaker to local VM
+sudo hal deploy apply
 
 run_util_script "jenkins/install_jenkins.sh" -jf "${vm_fqdn}" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
 
@@ -129,3 +162,12 @@ echo "Setting up initial user..."
 echo "jenkins.model.Jenkins.instance.securityRealm.createAccount(\"$jenkins_username\", \"$jenkins_password\")"  > addUser.groovy
 run_util_script "jenkins/run-cli-command.sh" -cif "addUser.groovy" -c "groovy ="
 rm "addUser.groovy"
+
+# Wait for Spinnaker services to be up before returning
+timeout=180
+echo "while !(nc -z localhost 8084) || !(nc -z localhost 9000); do sleep 1; done" | timeout $timeout bash
+return_value=$?
+if [ $return_value -ne 0 ]; then
+  >&2 echo "Failed to connect to Spinnaker within '$timeout' seconds."
+  exit $return_value
+fi

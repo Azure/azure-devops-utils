@@ -101,6 +101,16 @@ else
     exit 1
 fi
 
+# Connect to k8s cluster in the background
+hal deploy connect --service-names gate &
+timeout=30
+echo "while !(nc -z localhost 8084); do sleep 1; done" | timeout $timeout bash
+return_value=$?
+if [ $return_value -ne 0 ]; then
+  >&2 echo "Failed to connect to Spinnaker within '$timeout' seconds."
+  exit $return_value
+fi
+
 # Create application
 application_data=$(curl -s ${artifacts_location}spinnaker/add_k8s_pipeline/application.json${artifacts_location_sas_token})
 application_data=${application_data//REPLACE_APP_NAME/$app_name}
@@ -134,3 +144,6 @@ prod_load_balancer_data=${prod_load_balancer_data//REPLACE_PORT/$port}
 prod_load_balancer_data=${prod_load_balancer_data//REPLACE_STACK/"prod"}
 prod_load_balancer_data=${prod_load_balancer_data//REPLACE_SERVICE_TYPE/"LoadBalancer"}
 curl -X POST -H "Content-type: application/json" --data "$prod_load_balancer_data" http://localhost:8084/applications/${app_name}/tasks
+
+# Stop background connection to Spinnaker
+pkill kubectl
