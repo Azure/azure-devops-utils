@@ -55,7 +55,7 @@ throw_if_empty --user-name $admin_user_name
 throw_if_empty --resource_group $resource_group
 throw_if_empty --master_fqdn $master_fqdn
 
-destination_file="/home/spinnaker/.kube/config"
+config_path="/home/$admin_user_name/.kube/config"
 
 # Setup temporary credentials to access kubernetes master vms
 temp_user_name=$(uuidgen | sed 's/-//g')
@@ -70,8 +70,8 @@ master_vm_ids=$(az vm list -g "$resource_group" --query "[].id" -o tsv | grep "k
 az vm user update -u "$temp_user_name" --ssh-key-value "$temp_pub_key" --ids "$master_vm_ids"
 
 # Copy kube config over from master kubernetes cluster and mark readable
-sudo mkdir -p $(dirname "$destination_file")
-sudo sh -c "ssh -o StrictHostKeyChecking=no -i \"$temp_key_path\" $temp_user_name@$master_fqdn sudo cat /home/$admin_user_name/.kube/config > \"$destination_file\""
+sudo mkdir -p $(dirname "$config_path")
+sudo sh -c "ssh -o StrictHostKeyChecking=no -i \"$temp_key_path\" $temp_user_name@$master_fqdn sudo cat \"$config_path\" > \"$config_path\""
 
 # Remove temporary credentials on every kubernetes master vm
 az vm user delete -u "$temp_user_name" --ids "$master_vm_ids"
@@ -80,9 +80,9 @@ az vm user delete -u "$temp_user_name" --ids "$master_vm_ids"
 rm $temp_key_path
 rm ${temp_key_path}.pub
 
-if [ ! -s "$destination_file" ]; then
+if [ ! -s "$config_path" ]; then
   >&2 echo "Failed to copy kubeconfig for kubernetes cluster."
   exit -1
 fi
 
-sudo chmod +r "$destination_file"
+sudo chmod +r "$config_path"
