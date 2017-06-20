@@ -1,4 +1,48 @@
+# Download and Install Java
 Set-ExecutionPolicy Unrestricted
+$source = "http://download.oracle.com/otn-pub/java/jdk/8u131-b11/d54c1d3a095b4ff2b6607d096fa80163/jdk-8u131-windows-x64.exe"
+$destination = "C:\jdk-8u131-windows-x64.exe"
+$client = new-object System.Net.WebClient
+$cookie = "oraclelicense=accept-securebackup-cookie"
+$client.Headers.Add([System.Net.HttpRequestHeader]::Cookie, $cookie)
+$client.downloadFile($source, $destination)
+$proc = Start-Process -FilePath $destination -ArgumentList "/s" -Wait -PassThru
+$proc.WaitForExit()
+[System.Environment]::SetEnvironmentVariable("JAVA_HOME", "c:\Program Files\Java\jdk1.8.0_131", "Machine")
+[System.Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";c:\Program Files\Java\jdk1.8.0_131\bin", "Machine")
+$Env:Path += ";c:\Program Files\Java\jdk1.8.0_131\bin"
+
+
+# Install Maven
+$source = "http://mirror.reverse.net/pub/apache/maven/maven-3/3.5.0/binaries/apache-maven-3.5.0-bin.zip"
+$destination = "C:\maven.zip"
+$webClient = New-Object System.Net.WebClient
+$webClient.DownloadFile($source, $destination)
+$shell_app=new-object -com shell.application
+$zip_file = $shell_app.namespace($destination)
+mkdir 'C:\Program Files\apache-maven-3.5.0'
+$destination = $shell_app.namespace('C:\Program Files')
+$destination.Copyhere($zip_file.items(), 0x14)
+[System.Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";C:\Program Files\apache-maven-3.5.0\bin", "Machine")
+$Env:Path += ";C:\Program Files\apache-maven-3.5.0\bin"
+
+
+# Install Git
+$source = "https://github.com/git-for-windows/git/releases/latest"
+$latestRelease = Invoke-WebRequest -UseBasicParsing $source -Headers @{"Accept"="application/json"}
+$json = $latestRelease.Content | ConvertFrom-Json
+$latestVersion = $json.tag_name
+$versionHead = $latestVersion.Substring(1, $latestVersion.IndexOf("windows")-2)
+$source = "https://github.com/git-for-windows/git/releases/download/v${versionHead}.windows.1/Git-${versionHead}-64-bit.exe"
+$destination = "C:\Git-${versionHead}-64-bit.exe"
+$webClient = New-Object System.Net.WebClient
+$webClient.DownloadFile($source, $destination)
+$proc = Start-Process -FilePath $destination -ArgumentList "/VERYSILENT" -Wait -PassThru
+$proc.WaitForExit()
+$Env:Path += ";C:\Program Files\Git\cmd"
+
+
+# Install Slaves jar and connect via JNLP
 # Jenkins plugin will dynamically pass the server name and vm name.
 # If your jenkins server is configured for security , make sure to edit command for how slave executes
 $jenkinsserverurl = $args[0]
@@ -8,33 +52,16 @@ $secret = $args[2]
 #Default workspace location
 Set-Location d:\
 
-# Download the file to a specific location
-Write-Output "Downloading zulu SDK "
-$source = "http://azure.azulsystems.com/zulu/zulu1.7.0_51-7.3.0.4-win64.zip?jenkins"
-mkdir d:\azurecsdir
-$destination = "d:\azurecsdir\zuluJDK.zip"
-$wc = New-Object System.Net.WebClient
-$wc.DownloadFile($source, $destination)
-
-Write-Output "Unzipping JDK "
-# Unzip the file to specified location
-$shell_app=new-object -com shell.application
-$zip_file = $shell_app.namespace($destination)
-mkdir d:\java
-$destination = $shell_app.namespace("d:\java")
-$destination.Copyhere($zip_file.items())
-Write-Output "Successfully downloaded and extracted JDK "
-
 # Downloading jenkins slaves jar
 Write-Output "Downloading jenkins slave jar "
 $slaveSource = $jenkinsserverurl + "jnlpJars/slave.jar"
-$destSource = "d:\java\slave.jar"
+$destSource = "d:\slave.jar"
 $wc = New-Object System.Net.WebClient
 $wc.DownloadFile($slaveSource, $destSource)
 
 # execute agent
 Write-Output "Executing agent process "
-$java="d:\java\zulu1.7.0_51-7.3.0.4-win64\bin\java.exe"
+$java="java"
 $jar="-jar"
 $jnlpUrl="-jnlpUrl"
 $secretFlag="-secret"
