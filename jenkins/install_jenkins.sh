@@ -8,6 +8,7 @@ Arguments
   --jenkins_fqdn|-jf       [Required] : Jenkins FQDN
   --vm_private_ip|-pi                 : The VM private ip used to configure Jenkins URL. If missing, jenkins_fqdn will be used instead
   --jenkins_release_type|-jrt         : The Jenkins release type (LTS or weekly or verified). By default it's set to LTS
+  --jenkins_version_location|-jvl     : Url used to specify the version of Jenkins.
   --artifacts_location|-al            : Url used to reference other scripts/artifacts.
   --sas_token|-st                     : A sas token needed if the artifacts location is private.
 EOF
@@ -36,6 +37,7 @@ function run_util_script() {
 
 #defaults
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
+jenkins_version_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/jenkins/jenkins-verified-ver"
 azure_web_page_location="/usr/share/nginx/azure"
 jenkins_release_type="LTS"
 
@@ -54,6 +56,10 @@ do
       ;;
     --jenkins_release_type|-jrt)
       jenkins_release_type="$1"
+      shift
+      ;;
+    --jenkins_version_location|-jvl)
+      jenkins_version_location="$1"
       shift
       ;;
     --artifacts_location|-al)
@@ -199,9 +205,9 @@ sudo apt-get install openjdk-8-jre openjdk-8-jre-headless openjdk-8-jdk --yes
 
 #install jenkins
 if [[ ${jenkins_release_type} == 'verified' ]]; then
-  jenkins_version=$(curl --silent "${artifacts_location}/jenkins/jenkins-verified-ver")
+  jenkins_version=$(curl --silent "${jenkins_version_location}")
   deb_file=jenkins_${jenkins_version}_all.deb
-  wget -q https://pkg.jenkins.io/debian-stable/binary/${deb_file}
+  wget -q "https://pkg.jenkins.io/debian-stable/binary/${deb_file}"
   if [[ -f ${deb_file} ]]; then
     sudo dpkg -i ${deb_file}
     sudo apt-get install -f --yes
