@@ -1,5 +1,7 @@
 # Download and Install Java
 Set-ExecutionPolicy Unrestricted
+#Default workspace location
+Set-Location C:\
 $source = "http://download.oracle.com/otn-pub/java/jdk/8u131-b11/d54c1d3a095b4ff2b6607d096fa80163/jdk-8u131-windows-x64.exe"
 $destination = "C:\jdk-8u131-windows-x64.exe"
 $client = new-object System.Net.WebClient
@@ -49,13 +51,10 @@ $jenkinsserverurl = $args[0]
 $vmname = $args[1]
 $secret = $args[2]
 
-#Default workspace location
-Set-Location d:\
-
 # Downloading jenkins slaves jar
 Write-Output "Downloading jenkins slave jar "
 $slaveSource = $jenkinsserverurl + "jnlpJars/slave.jar"
-$destSource = "d:\slave.jar"
+$destSource = "C:\slave.jar"
 $wc = New-Object System.Net.WebClient
 $wc.DownloadFile($slaveSource, $destSource)
 
