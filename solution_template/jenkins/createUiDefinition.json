@@ -79,14 +79,10 @@
         "name": "jenkinsReleaseType",
         "type": "Microsoft.Common.DropDown",
         "label": "Jenkins release type",
-        "defaultValue": "Azure Verified (Recommended)",
+        "defaultValue": "LTS",
         "toolTip": "",
         "constraints": {
           "allowedValues": [
-            {
-              "label": "Azure Verified (Recommended)",
-              "value": "verified"
-            },
             {
               "label": "LTS",
               "value": "LTS"
@@ -94,6 +90,10 @@
             {
               "label": "Weekly Build",
               "value": "weekly"
+            },
+            {
+              "label": "Azure Verified",
+              "value": "verified"
             }
           ]
         },
