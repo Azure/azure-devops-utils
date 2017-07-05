@@ -1,0 +1,224 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/0.1.2-preview/CreateUIDefinition.MultiVm.json#",
+  "handler": "Microsoft.Compute.MultiVm",
+  "version": "0.1.2-preview",
+  "parameters": {
+    "basics": [
+      {
+        "name": "vmName",
+        "type": "Microsoft.Common.TextBox",
+        "label": "Name",
+        "defaultValue": "Jenkins",
+        "toolTip": "",
+        "constraints": {
+          "required": true,
+          "regex": "^[a-z0-9A-Z]{1,54}$",
+          "validationMessage": "Only alphanumeric characters are allowed, and the value must be 1-54 characters long."
+        },
+        "visible": true
+      },
+      {
+        "name": "vmDiskType",
+        "type": "Microsoft.Common.DropDown",
+        "label": "VM disk type",
+        "defaultValue": "SSD",
+        "toolTip": "Premium disks (SSD) are backed by solid state drives and offer consistent, low-latency performance. They provide the best balance between price and performance, and are ideal for I/O-intensive applications and production workloads. Standard disks (HDD) are backed by magnetic drives and are preferable for applications where data is accessed infrequently.",
+        "constraints": {
+          "allowedValues": [
+            {
+              "label": "SSD",
+              "value": "0"
+            },
+            {
+              "label": "HDD",
+              "value": "1"
+            }
+          ]
+        },
+        "visible": true
+      },
+      {
+        "name": "userName",
+        "type": "Microsoft.Compute.UserNameTextBox",
+        "label": "User name",
+        "defaultValue": "",
+        "toolTip": "",
+        "constraints": {
+          "required": true
+        },
+        "osPlatform": "Linux",
+        "visible": true
+      },
+      {
+        "name": "authType",
+        "type": "Microsoft.Compute.CredentialsCombo",
+        "label": {
+          "authenticationType": "Authentication type",
+          "password": "Password",
+          "confirmPassword": "Confirm password",
+          "sshPublicKey": "SSH public key"
+        },
+        "toolTip": {
+          "authenticationType": "",
+          "password": "",
+          "sshPublicKey": ""
+        },
+        "constraints": {
+          "required": true,
+          "customPasswordRegex": "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@#\\$%\\^&\\*-_!+=\\[\\]\\{\\}\\|\\\\:',\\.\\?\\/`~\"\\(\\);]{8,}$",
+          "customValidationMessage": "The password must contain at least 8 characters, with at least 1 letter and 1 number. Alphanumerical (@#$%^&*-_!+=[]{}|\\:',.?/`~\"();)and special characters are allowed"
+        },
+        "options": {
+          "hideConfirmation": false,
+          "hidePassword": false
+        },
+        "osPlatform": "Linux",
+        "visible": true
+      },
+      {
+        "name": "jenkinsReleaseType",
+        "type": "Microsoft.Common.DropDown",
+        "label": "Jenkins release type",
+        "defaultValue": "LTS",
+        "toolTip": "",
+        "constraints": {
+          "allowedValues": [
+            {
+              "label": "LTS",
+              "value": "LTS"
+            },
+            {
+              "label": "Weekly Build",
+              "value": "weekly"
+            },
+            {
+              "label": "Azure Verified",
+              "value": "verified"
+            }
+          ]
+        },
+        "visible": true
+      }
+    ],
+    "steps": [
+      {
+        "name": "firstStep",
+        "label": "Settings",
+        "bladeTitle": "Settings",
+        "subLabel": {
+          "preValidation": "Configure additional options",
+          "postValidation": "Done"
+        },
+        "elements": [
+          {
+            "name": "vmSize",
+            "type": "Microsoft.Compute.SizeSelector",
+            "label": "Size",
+            "toolTip": "",
+            "recommendedSizes": [
+              "Standard_DS2_v2",
+              "Standard_DS1_v2",
+              "Standard_DS11_v2"
+            ],
+            "constraints": {
+              "allowedSizes": [
+                "Standard_DS1_v2",
+                "Standard_DS2_v2",
+                "Standard_DS3_v2",
+                "Standard_DS4_v2",
+                "Standard_DS5_v2",
+                "Standard_DS11_v2"
+              ]
+            },
+            "osPlatform": "Linux",
+            "count": 1,
+            "visible": true
+          },
+          {
+            "name": "storage_type_hdd_true",
+            "type": "Microsoft.Common.TextBox",
+            "label": "",
+            "defaultValue": "Standard_LRS",
+            "toolTip": "",
+            "visible": false
+          },
+          {
+            "name": "storage_type_hdd_false",
+            "type": "Microsoft.Common.TextBox",
+            "label": "",
+            "defaultValue": "Premium_LRS",
+            "toolTip": "",
+            "visible": false
+          },
+          {
+            "name": "storageAccount",
+            "type": "Microsoft.Storage.StorageAccountSelector",
+            "label": "Storage account",
+            "toolTip": "Disks for Azure virtual machines are created in storage accounts",
+            "defaultValue": {
+              "name": "[concat('jenkins', take( toLower(encodeBase64(guid())) , 14), string(rand(0, 999)) )]",
+              "type": "[ first ( skip( parse('[\"Premium_LRS\", \"Standard_LRS\" ]'), int(basics('vmDiskType')) ) ) ]"
+            },
+            "options": {
+              "hideExisting": false
+            },
+            "constraints": {
+              "allowedTypes": [
+                "Standard_LRS",
+                "Standard_GRS",
+                "Standard_RAGRS",
+                "Premium_LRS"
+              ]
+            },
+            "visible": true
+          },
+          {
+            "name": "publicIP",
+            "type": "Microsoft.Network.PublicIpAddressCombo",
+            "label": {
+              "publicIpAddress": "Public IP address",
+              "domainNameLabel": "Domain name label"
+            },
+            "toolTip": {
+              "publicIpAddress": "",
+              "domainNameLabel": ""
+            },
+            "defaultValue": {
+              "publicIpAddressName": "JenkinsIP",
+              "domainNameLabel": ""
+            },
+            "constraints": {
+              "required": {
+                "domainNameLabel": true
+              }
+            },
+            "options": {
+              "hideNone": true,
+              "hideDomainNameLabel": false,
+              "hideExisting": false
+            },
+            "visible": true
+          }
+        ]
+      }
+    ],
+    "outputs": {
+      "adminPassword": "[basics('authType').password]",
+      "adminSSHPublicKey": "[basics('authType').sshPublicKey]",
+      "adminUserName": "[basics('userName')]",
+      "authenticationType": "[basics('authType').authenticationType]",
+      "dnsPrefix": "[steps('firstStep').publicIP.domainNameLabel]",
+      "publicIPName": "[steps('firstStep').publicIP.name]",
+      "publicIPNewOrExisting": "[steps('firstStep').publicIP.newOrExistingOrNone]",
+      "publicIPResourceGroup": "[steps('firstStep').publicIP.resourceGroup]",
+      "storageAccountName": "[steps('firstStep').storageAccount.name]",
+      "storageAccountNewOrExisting": "[steps('firstStep').storageAccount.newOrExisting]",
+      "storageAccountType": "[steps('firstStep').storageAccount.type]",
+      "storageAccountResourceGroup": "[steps('firstStep').storageAccount.resourceGroup]",
+      "vmName": "[basics('vmName')]",
+      "vmSize": "[steps('firstStep').vmSize]",
+      "location": "[location()]",
+      "jenkinsReleaseType": "[basics('jenkinsReleaseType')]"
+    }
+  }
+}
