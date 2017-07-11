@@ -1,0 +1,55 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "outputs": {},
+  "parameters": {
+    "location": {
+      "type": "string"
+    },
+    "vmName": {
+      "type": "string"
+    },
+    "_extensionScript": {
+      "type": "string"
+    },
+    "storageAccountName": {
+      "type": "string"
+    },
+    "storageAccountResourceGroup": {
+      "type": "string"
+    },
+    "adminUsername": {
+      "type": "string"
+    },
+    "_artifactsLocation": {
+      "type": "string"
+    },
+    "_artifactsLocationSasToken": {
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "apiVersion": "2015-06-15",
+      "dependsOn": [],
+      "location": "[parameters('location')]",
+      "name": "[concat(parameters('vmName'), '/Init')]",
+      "properties": {
+        "autoUpgradeMinorVersion": true,
+        "protectedSettings": {
+            "commandToExecute": "[concat('./', parameters('_extensionScript'), ' -san \"', parameters('storageAccountName'), '\" -sak \"', listKeys(resourceId(parameters('storageAccountResourceGroup'), 'Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2016-01-01').keys[0].value, '\" -u \"', parameters('adminUsername'), '\" -al \"', parameters('_artifactsLocation'), '\" -st \"', parameters('_artifactsLocationSasToken'), '\"')]"
+        },
+        "publisher": "Microsoft.Azure.Extensions",
+        "settings": {
+          "fileUris": [
+                "[concat(parameters('_artifactsLocation'), 'quickstart_template/', parameters('_extensionScript'), parameters('_artifactsLocationSasToken'))]"
+          ]
+        },
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.0"
+      },
+      "type": "Microsoft.Compute/virtualMachines/extensions"
+    }
+  ],
+  "variables": {}
+}
