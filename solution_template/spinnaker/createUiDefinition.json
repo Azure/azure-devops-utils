@@ -8,7 +8,7 @@
         "name": "vmName",
         "type": "Microsoft.Common.TextBox",
         "label": "Name",
-        "defaultValue": "Jenkins",
+        "defaultValue": "Spinnaker",
         "toolTip": "",
         "constraints": {
           "required": true,
@@ -74,30 +74,6 @@
         },
         "osPlatform": "Linux",
         "visible": true
-      },
-      {
-        "name": "jenkinsReleaseType",
-        "type": "Microsoft.Common.DropDown",
-        "label": "Jenkins release type",
-        "defaultValue": "LTS",
-        "toolTip": "",
-        "constraints": {
-          "allowedValues": [
-            {
-              "label": "LTS",
-              "value": "LTS"
-            },
-            {
-              "label": "Weekly Build",
-              "value": "weekly"
-            },
-            {
-              "label": "Azure Verified",
-              "value": "verified"
-            }
-          ]
-        },
-        "visible": true
       }
     ],
     "steps": [
@@ -156,7 +132,7 @@
             "label": "Storage account",
             "toolTip": "Disks for Azure virtual machines are created in storage accounts",
             "defaultValue": {
-              "name": "[concat('jenkins', take( toLower(encodeBase64(guid())) , 14), string(rand(0, 999)) )]",
+              "name": "[concat('spinnaker', take( toLower(encodeBase64(guid())) , 12), string(rand(0, 999)) )]",
               "type": "[ first ( skip( parse('[\"Premium_LRS\", \"Standard_LRS\" ]'), int(basics('vmDiskType')) ) ) ]"
             },
             "options": {
@@ -184,7 +160,7 @@
               "domainNameLabel": ""
             },
             "defaultValue": {
-              "publicIpAddressName": "JenkinsIP",
+              "publicIpAddressName": "SpinnakerIP",
               "domainNameLabel": ""
             },
             "constraints": {
@@ -217,8 +193,7 @@
       "storageAccountResourceGroup": "[steps('firstStep').storageAccount.resourceGroup]",
       "vmName": "[basics('vmName')]",
       "vmSize": "[steps('firstStep').vmSize]",
-      "location": "[location()]",
-      "jenkinsReleaseType": "[basics('jenkinsReleaseType')]"
+      "location": "[location()]"
     }
   }
 }
