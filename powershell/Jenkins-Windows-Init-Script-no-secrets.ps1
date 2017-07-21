@@ -10,9 +10,10 @@ $client.Headers.Add([System.Net.HttpRequestHeader]::Cookie, $cookie)
 $client.downloadFile($source, $destination)
 $proc = Start-Process -FilePath $destination -ArgumentList "/s" -Wait -PassThru
 $proc.WaitForExit()
-[System.Environment]::SetEnvironmentVariable("JAVA_HOME", "c:\Program Files\Java\jdk1.8.0_131", "Machine")
-[System.Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";c:\Program Files\Java\jdk1.8.0_131\bin", "Machine")
-$Env:Path += ";c:\Program Files\Java\jdk1.8.0_131\bin"
+$javaHome = "c:\Program Files\Java\jdk1.8.0_131"
+[System.Environment]::SetEnvironmentVariable("JAVA_HOME", ${javaHome}, "Machine")
+[System.Environment]::SetEnvironmentVariable("PATH", $Env:Path + ";${javaHome}\bin", "Machine")
+$Env:Path += ";${javaHome}\bin"
 
 
 # Install Maven
@@ -55,25 +56,30 @@ $secret = $args[2]
 
 # Downloading jenkins slaves jar
 Write-Output "Downloading jenkins slave jar "
+mkdir c:\jenkins
 $slaveSource = $jenkinsserverurl + "jnlpJars/slave.jar"
-$destSource = "C:\slave.jar"
+$destSource = "c:\jenkins\slave.jar"
 $wc = New-Object System.Net.WebClient
 $wc.DownloadFile($slaveSource, $destSource)
 
-# execute agent
+# Download the service wrapper
+$wrapperExec = "c:\jenkins\jenkins-slave.exe"
+$configFile = "c:\jenkins\jenkins-slave.xml"
+$wc.DownloadFile("https://github.com/kohsuke/winsw/releases/download/winsw-v2.1.2/WinSW.NET2.exe", $wrapperExec)
+$wc.DownloadFile("https://raw.githubusercontent.com/azure-devops/ci/master/resources/jenkins-slave.exe.config", "c:\jenkins\jenkins-slave.exe.config")
+$wc.DownloadFile("https://raw.githubusercontent.com/azure-devops/ci/master/resources/jenkins-slave.xml", $configFile)
+
+# Prepare config
 Write-Output "Executing agent process "
-$java="java"
-$jar="-jar"
-$jnlpUrl="-jnlpUrl"
-$secretFlag="-secret"
-$serverURL=$jenkinsserverurl+"computer/" + $vmname + "/slave-agent.jnlp"
-while ($true) {
-  try {
-    # Launch
-    & $java -jar $destSource $secretFlag  $secret $jnlpUrl $serverURL -noReconnect
-  }
-  catch [System.Exception] {
-    Write-Output $_.Exception.ToString()
-  }
-  Start-Sleep 10
+$configExec = "${javaHome}\bin\java.exe"
+$configArgs = "-jnlpUrl `"${jenkinsserverurl}/computer/${vmname}/slave-agent.jnlp`" -noReconnect"
+if ($secret) {
+    $configArgs += " -secret `"$secret`""
 }
+(Get-Content $configFile).replace('@JAVA@', $configExec) | Set-Content $configFile
+(Get-Content $configFile).replace('@ARGS@', $configArgs) | Set-Content $configFile
+(Get-Content $configFile).replace('@SLAVE_JAR_URL', $slaveSource) | Set-Content $configFile
+
+# Install the service
+& $wrapperExec install
+& $wrapperExec start
