@@ -54,39 +54,15 @@
         },
         "osPlatform": "Linux",
         "visible": true
-      },
-      {
-        "name": "jenkinsReleaseType",
-        "type": "Microsoft.Common.DropDown",
-        "label": "Jenkins release type",
-        "defaultValue": "LTS",
-        "toolTip": "",
-        "constraints": {
-          "allowedValues": [
-            {
-              "label": "LTS",
-              "value": "LTS"
-            },
-            {
-              "label": "Weekly Build",
-              "value": "weekly"
-            },
-            {
-              "label": "Azure Verified",
-              "value": "verified"
-            }
-          ]
-        },
-        "visible": true
       }
     ],
     "steps": [
       {
         "name": "firstStep",
-        "label": "Settings",
-        "bladeTitle": "Settings",
+        "label": "Additional Settings",
+        "bladeTitle": "Additional Settings",
         "subLabel": {
-          "preValidation": "Configure additional options",
+          "preValidation": "",
           "postValidation": "Done"
         },
         "elements": [
@@ -160,6 +136,85 @@
               "hideExisting": false
             },
             "visible": true
+          },
+          {
+            "name": "jenkinsReleaseType",
+            "type": "Microsoft.Common.DropDown",
+            "label": "Jenkins release type",
+            "defaultValue": "LTS",
+            "toolTip": "",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "LTS",
+                  "value": "LTS"
+                },
+                {
+                  "label": "Weekly Build",
+                  "value": "weekly"
+                },
+                {
+                  "label": "Azure Verified",
+                  "value": "verified"
+                }
+              ]
+            },
+            "visible": true
+          }
+        ]
+      },
+      {
+        "name": "secondStep",
+        "label": "Integration Settings",
+        "bladeTitle": "Jenkins Integration Settings",
+        "subLabel": {
+          "preValidation": "",
+          "postValidation": "Done"
+        },
+        "elements": [
+          {
+            "name": "sptype",
+            "type": "Microsoft.Common.DropDown",
+            "label": "Service Pricipal Integration",
+            "defaultValue": "Auto(MSI)",
+            "toolTip": "The service pricipal will be added into Jenkins as a credential for authenticating with Azure. 'Auto' means that the principal will be created by MSI (Managed Service Identity). 'Manual' means the principal should be created by user and be filled in below.",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "Auto(MSI)",
+                  "value": "msi"
+                },
+                {
+                  "label": "Manual",
+                  "value": "manual"
+                }
+              ]
+            },
+            "visible": true
+          },
+          {
+            "name": "section1",
+            "type": "Microsoft.Common.Section",
+            "label": "Service Principal",
+            "elements": [
+              {
+                "name": "spid",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Service Principal ID",
+                "defaultValue": "",
+                "toolTip": "",
+                "visible": true
+              },
+              {
+                "name": "spsecret",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Secret",
+                "defaultValue": "",
+                "toolTip": "",
+                "visible": true
+              }
+            ],
+            "visible": "[equals(steps('secondStep').sptype,'manual')]"
           }
         ]
       }
@@ -177,7 +232,10 @@
       "vmName": "[basics('vmName')]",
       "vmSize": "[steps('firstStep').vmSize]",
       "location": "[location()]",
-      "jenkinsReleaseType": "[basics('jenkinsReleaseType')]"
+      "jenkinsReleaseType": "[steps('firstStep').jenkinsReleaseType]",
+      "spType": "[steps('secondStep').sptype]",
+      "spId": "[steps('secondStep').section1.spid]",
+      "spSecret": "[steps('secondStep').section1.spsecret]"
     }
   }
 }
