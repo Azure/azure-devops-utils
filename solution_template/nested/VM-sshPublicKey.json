@@ -1,7 +1,12 @@
 ﻿{
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
-  "outputs": {},
+  "outputs": {
+    "identity": {
+      "type": "object",
+      "value": "[reference(concat(resourceId('Microsoft.Compute/virtualMachines', parameters('vmName')), '/providers/Microsoft.ManagedIdentity/Identities/default'), '2015-08-31-PREVIEW')]"
+    }
+  },
   "parameters": {
     "adminPassword": {
       "type": "securestring"
@@ -36,6 +41,9 @@
       "apiVersion": "2016-03-30",
       "dependsOn": [],
       "location": "[parameters('vmLocation')]",
+      "identity": {        
+        "Type": "SystemAssigned"        
+      },
       "name": "[parameters('vmName')]",
       "properties": {
         "hardwareProfile": {
