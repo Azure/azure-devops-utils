@@ -1,0 +1,99 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "outputs": {
+    "identity": {
+      "type": "object",
+      "value": "[reference(concat(resourceId('Microsoft.Compute/virtualMachines', parameters('vmName')), '/providers/Microsoft.ManagedIdentity/Identities/default'), '2015-08-31-PREVIEW')]"
+    }
+  },
+  "parameters": {
+    "adminPassword": {
+      "type": "securestring"
+    },
+    "adminSSHPublicKey": {
+      "type": "securestring"
+    },
+    "adminUserName": {
+      "type": "string"
+    },
+    "networkInterfaceId": {
+      "type": "string"
+    },
+    "storageAccountType": {
+      "type": "string"
+    },
+    "ubuntuSku": {
+      "type": "string"
+    },
+    "vmLocation": {
+      "type": "string"
+    },
+    "vmName": {
+      "type": "string"
+    },
+    "vmSize": {
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "apiVersion": "2017-03-30",
+      "dependsOn": [],
+      "location": "[parameters('vmLocation')]",
+      "identity": {        
+        "Type": "SystemAssigned"        
+      },
+      "name": "[parameters('vmName')]",
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[parameters('networkInterfaceId')]"
+            }
+          ]
+        },
+        "osProfile": {
+          "adminUsername": "[parameters('adminUserName')]",
+          "computerName": "[parameters('vmName')]",
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": "true",
+            "ssh": {
+              "publicKeys": [
+                {
+                  "keyData": "[parameters('adminSSHPublicKey')]",
+                  "path": "[concat('/home/',parameters('adminUsername'),'/.ssh/authorized_keys')]"
+                }
+              ]
+            }
+          }
+        },
+        "storageProfile": {
+          "imageReference": {
+            "offer": "UbuntuServer",
+            "publisher": "Canonical",
+            "sku": "[parameters('ubuntuSku')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "caching": "ReadWrite",
+            "createOption": "FromImage",
+            "name": "osDisk",
+            "managedDisk":{
+              "storageAccountType": "[parameters('storageAccountType')]"
+            }
+          }
+        }
+      },
+      "resources": [],
+      "tags": {
+        "displayName": "[parameters('vmName')]"
+      },
+      "type": "Microsoft.Compute/virtualMachines"
+    }
+  ],
+  "variables": {}
+}

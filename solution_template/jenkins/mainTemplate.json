@@ -66,28 +66,10 @@
       },
       "type": "string"
     },
-    "storageAccountName": {
-      "metadata": {
-        "description": "Storage Account Name"
-      },
-      "type": "string"
-    },
-    "storageAccountNewOrExisting": {
-      "metadata": {
-        "description": "Should be 'new' or 'existing'"
-      },
-      "type": "string"
-    },
     "storageAccountType": {
       "defaultValue": "Standard_LRS",
       "metadata": {
         "description": "Storage Account Type"
-      },
-      "type": "string"
-    },
-    "storageAccountResourceGroup": {
-      "metadata": {
-        "description": "The Storage Account Resource Group"
       },
       "type": "string"
     },
@@ -123,49 +105,18 @@
     "frontEndNSGName": "[concat(parameters('vmName'), 'NSG')]",
     "nestedUrl": "[concat(parameters('_artifactsLocation'),'/solution_template/nested')]",
     "nicName": "[concat(parameters('vmName'), 'VMNic')]",
-    "OSDiskName": "[concat(parameters('vmName'), 'OSDisk-', uniqueString(resourceGroup().id, deployment().name))]",
     "publicIPDeploymentName": "[concat(parameters('publicIPName'), '-publicIP-deploy')]",
-    "storageDeploymentName": "[concat(parameters('storageAccountName'), '-storage-deploy')]",
     "subnetName": "[concat(parameters('vmName'), 'Subnet')]",
     "subnetPrefix": "10.0.0.0/24",
     "templateUrlIP": "[concat(variables('nestedUrl'),'/publicIP-',parameters('publicIPNewOrExisting'),'.json',parameters('_artifactsLocationSasToken'))]",
-    "templateUrlStorage": "[concat(variables('nestedUrl'),'/storageAccount-',parameters('storageAccountNewOrExisting'),'.json',parameters('_artifactsLocationSasToken'))]",
-    "templateUrlVM": "[concat(variables('nestedUrl'),'/VM-',parameters('authenticationType'),'.json',parameters('_artifactsLocationSasToken'))]",
+    "templateUrlVM": "[concat(variables('nestedUrl'),'/VM-new-',parameters('authenticationType'),'.json',parameters('_artifactsLocationSasToken'))]",
     "ubuntuSku": "16.04-LTS",
     "virtualNetworkName": "[concat(parameters('vmName'), 'VNET')]",
     "virtualNetworkPrefix": "10.0.0.0/16",
     "vmDeploymentName": "[concat(parameters('vmName'), '-VM-deploy')]",
-    "vmPrivateIP": "10.0.0.5",
-    "vmStorageAccountContainerName": "vhds"
+    "vmPrivateIP": "10.0.0.5"
   },
   "resources": [
-    {
-      "apiVersion": "2016-09-01",
-      "dependsOn": [],
-      "name": "[variables('storageDeploymentName')]",
-      "properties": {
-        "mode": "Incremental",
-        "parameters": {
-          "storageAccountName": {
-            "value": "[parameters('storageAccountName')]"
-          },
-          "storageAccountType": {
-            "value": "[parameters('storageAccountType')]"
-          },
-          "storageAccountLocation": {
-            "value": "[parameters('location')]"
-          },
-          "storageAccountResourceGroup": {
-            "value": "[parameters('storageAccountResourceGroup')]"
-          }
-        },
-        "templateLink": {
-          "contentVersion": "1.0.0.0",
-          "uri": "[variables('templateUrlStorage')]"
-        }
-      },
-      "type": "Microsoft.Resources/deployments"
-    },
     {
       "apiVersion": "2016-09-01",
       "dependsOn": [],
@@ -298,8 +249,7 @@
       "apiVersion": "2016-09-01",
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]",
-        "[resourceId('Microsoft.Resources/deployments', variables('publicIPDeploymentName'))]",
-        "[resourceId('Microsoft.Resources/deployments', variables('storageDeploymentName'))]"
+        "[resourceId('Microsoft.Resources/deployments', variables('publicIPDeploymentName'))]"
       ],
       "name": "[variables('vmDeploymentName')]",
       "properties": {
@@ -317,8 +267,8 @@
           "networkInterfaceId": {
             "value": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
           },
-          "osDiskVHDUri": {
-            "value": "[concat(reference(variables('storageDeploymentName')).outputs.primaryEndpointBlob.value, variables('vmStorageAccountContainerName'), '/', variables('OSDiskName'), '.vhd')]"
+          "storageAccountType": {
+            "value": "[parameters('storageAccountType')]"
           },
           "ubuntuSku": {
             "value": "[variables('ubuntuSku')]"

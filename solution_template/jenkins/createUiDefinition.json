@@ -18,26 +18,6 @@
         "visible": true
       },
       {
-        "name": "vmDiskType",
-        "type": "Microsoft.Common.DropDown",
-        "label": "VM disk type",
-        "defaultValue": "SSD",
-        "toolTip": "Premium disks (SSD) are backed by solid state drives and offer consistent, low-latency performance. They provide the best balance between price and performance, and are ideal for I/O-intensive applications and production workloads. Standard disks (HDD) are backed by magnetic drives and are preferable for applications where data is accessed infrequently.",
-        "constraints": {
-          "allowedValues": [
-            {
-              "label": "SSD",
-              "value": "0"
-            },
-            {
-              "label": "HDD",
-              "value": "1"
-            }
-          ]
-        },
-        "visible": true
-      },
-      {
         "name": "userName",
         "type": "Microsoft.Compute.UserNameTextBox",
         "label": "User name",
@@ -135,39 +115,21 @@
             "visible": true
           },
           {
-            "name": "storage_type_hdd_true",
-            "type": "Microsoft.Common.TextBox",
-            "label": "",
-            "defaultValue": "Standard_LRS",
-            "toolTip": "",
-            "visible": false
-          },
-          {
-            "name": "storage_type_hdd_false",
-            "type": "Microsoft.Common.TextBox",
-            "label": "",
-            "defaultValue": "Premium_LRS",
-            "toolTip": "",
-            "visible": false
-          },
-          {
-            "name": "storageAccount",
-            "type": "Microsoft.Storage.StorageAccountSelector",
-            "label": "Storage account",
-            "toolTip": "Disks for Azure virtual machines are created in storage accounts",
-            "defaultValue": {
-              "name": "[concat('jenkins', take( toLower(encodeBase64(guid())) , 14), string(rand(0, 999)) )]",
-              "type": "[ first ( skip( parse('[\"Premium_LRS\", \"Standard_LRS\" ]'), int(basics('vmDiskType')) ) ) ]"
-            },
-            "options": {
-              "hideExisting": false
-            },
+            "name": "vmDiskType",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "VM disk type",
+            "defaultValue": "SSD",
+            "toolTip": "Premium disks (SSD) are backed by solid state drives and offer consistent, low-latency performance. They provide the best balance between price and performance, and are ideal for I/O-intensive applications and production workloads. Standard disks (HDD) are backed by magnetic drives and are preferable for applications where data is accessed infrequently.",
             "constraints": {
-              "allowedTypes": [
-                "Standard_LRS",
-                "Standard_GRS",
-                "Standard_RAGRS",
-                "Premium_LRS"
+              "allowedValues": [
+                {
+                  "label": "SSD",
+                  "value": "Premium_LRS"
+                },
+                {
+                  "label": "HDD",
+                  "value": "Standard_LRS"
+                }
               ]
             },
             "visible": true
@@ -211,10 +173,7 @@
       "publicIPName": "[steps('firstStep').publicIP.name]",
       "publicIPNewOrExisting": "[steps('firstStep').publicIP.newOrExistingOrNone]",
       "publicIPResourceGroup": "[steps('firstStep').publicIP.resourceGroup]",
-      "storageAccountName": "[steps('firstStep').storageAccount.name]",
-      "storageAccountNewOrExisting": "[steps('firstStep').storageAccount.newOrExisting]",
-      "storageAccountType": "[steps('firstStep').storageAccount.type]",
-      "storageAccountResourceGroup": "[steps('firstStep').storageAccount.resourceGroup]",
+      "storageAccountType": "[steps('firstStep').vmDiskType]",
       "vmName": "[basics('vmName')]",
       "vmSize": "[steps('firstStep').vmSize]",
       "location": "[location()]",
