@@ -3,7 +3,7 @@
 Install Halyard and automatically configure Spinnaker to use Azure Storage (azs) as its persistent storage.
 
 ## Prerequisites
-This must be executed on a linux VM. You must run 'hal deploy apply' to finish deployment of Spinnaker.
+This must be executed on a linux VM. You must run 'sudo hal deploy apply' to finish deployment of Spinnaker.
 
 ## Arguments
 | Name | Description |
