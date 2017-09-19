@@ -6,7 +6,7 @@
       "metadata": {
         "description": "Artifacts location"
       },
-      "defaultValue": "https://raw.githubusercontent.com/LGDoor/azure-devops-utils/master/",
+      "defaultValue": "https://raw.githubusercontent.com/Azure/azure-devops-utils/master/",
       "type": "string"
     },
     "_artifactsLocationSasToken": {
@@ -48,6 +48,20 @@
       },
       "type": "string"
     },
+    "jenkinsReleaseType": {
+      "metadata": {
+        "description": "Jenkins release type (LTS or weekly or verified)"
+      },
+      "type": "string",
+      "defaultValue": "LTS"
+    },
+    "location": {
+      "metadata": {
+        "description": "Azure location where to deploy the resources"
+      },
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
     "publicIPName": {
       "metadata": {
         "description": "Public IP name"
@@ -73,6 +87,27 @@
       },
       "type": "string"
     },
+    "spId":{
+      "defaultValue": "",
+      "metadata": {
+        "description": ""
+      },
+      "type": "string"
+    },
+    "spSecret":{
+      "defaultValue": "",
+      "metadata": {
+        "description": ""
+      },
+      "type": "string"
+    },
+    "spType":{
+      "defaultValue": "msi",
+      "metadata": {
+        "description": "The type of service principal injected into Jenkins (can be 'msi' or 'manual')."
+      },
+      "type": "string"
+    },
     "vmName": {
       "metadata": {
         "description": "Virtual Machine Name (also used as a prefix for other resources)"
@@ -84,24 +119,11 @@
         "description": "Virtual Machine Size"
       },
       "type": "string"
-    },
-    "location": {
-      "metadata": {
-        "description": "Azure location where to deploy the resources"
-      },
-      "type": "string",
-      "defaultValue": "[resourceGroup().location]"
-    },
-    "jenkinsReleaseType": {
-      "metadata": {
-        "description": "Jenkins release type (LTS or weekly or verified)"
-      },
-      "type": "string",
-      "defaultValue": "LTS"
     }
   },
   "variables": {
     "_extensionScript": "install_jenkins.sh",
+    "_spScript": "inject-service-principal.sh",
     "frontEndNSGName": "[concat(parameters('vmName'), 'NSG')]",
     "nestedUrl": "[concat(parameters('_artifactsLocation'),'/solution_template/nested')]",
     "nicName": "[concat(parameters('vmName'), 'VMNic')]",
@@ -297,6 +319,7 @@
       "dependsOn": [
         "[resourceId('Microsoft.Resources/deployments', variables('vmDeploymentName'))]"
       ],
+      "condition": "[equals(parameters('spType'), 'msi')]",
       "properties": {
         "roleDefinitionId": "[concat(subscription().id, '/providers/Microsoft.Authorization/roleDefinitions/', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
         "principalId": "[reference(variables('vmDeploymentName')).outputs.identity.value.principalId]",
@@ -335,6 +358,30 @@
         "settings": {
           "fileUris": [
             "[concat(parameters('_artifactsLocation'), '/jenkins/', variables('_extensionScript'), parameters('_artifactsLocationSasToken'))]"
+          ]
+        },
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.0"
+      },
+      "type": "Microsoft.Compute/virtualMachines/extensions"
+    },
+    {
+      "apiVersion": "2015-06-15",
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines/extensions', parameters('vmName'), 'Init')]"
+      ],
+      "location": "[parameters('location')]",
+      "name": "[concat(parameters('vmName'), '/InjectServicePrincipal')]",
+      "condition": "[equals(parameters('spType'), 'manual')]",
+      "properties": {
+        "autoUpgradeMinorVersion": true,
+        "protectedSettings": {
+          "commandToExecute": "[concat('./' , variables('_spScript'), ' -id \"', parameters('spId'), '\" -ss \"', parameters('spSecret'), '\" -sid \"', subscription().subscriptionId, '\" -tid \"', subscription().tenantId, '\" -al \"', parameters('_artifactsLocation'), '\" -st \"', parameters('_artifactsLocationSasToken'), '\"' )]"
+        },
+        "publisher": "Microsoft.Azure.Extensions",
+        "settings": {
+          "fileUris": [
+            "[concat(parameters('_artifactsLocation'), '/jenkins/', variables('_spScript'), parameters('_artifactsLocationSasToken'))]"
           ]
         },
         "type": "CustomScript",

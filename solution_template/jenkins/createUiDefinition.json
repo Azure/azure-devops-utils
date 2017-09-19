@@ -175,9 +175,9 @@
           {
             "name": "sptype",
             "type": "Microsoft.Common.DropDown",
-            "label": "Service Priciple Integration",
+            "label": "Service Pricipal Integration",
             "defaultValue": "Auto(MSI)",
-            "toolTip": "",
+            "toolTip": "The service pricipal will be added into Jenkins as a credential for authenticating with Azure. 'Auto' means that the principal will be created by MSI (Managed Service Identity). 'Manual' means the principal should be created by user and be filled in below.",
             "constraints": {
               "allowedValues": [
                 {
@@ -195,14 +195,14 @@
           {
             "name": "section1",
             "type": "Microsoft.Common.Section",
-            "label": "Some section",
+            "label": "Service Principal",
             "elements": [
               {
                 "name": "spid",
                 "type": "Microsoft.Common.TextBox",
                 "label": "Service Principal ID",
                 "defaultValue": "",
-                "toolTip": "Halp!",
+                "toolTip": "",
                 "visible": true
               },
               {
@@ -210,7 +210,7 @@
                 "type": "Microsoft.Common.TextBox",
                 "label": "Secret",
                 "defaultValue": "",
-                "toolTip": "Halp!",
+                "toolTip": "",
                 "visible": true
               }
             ],
