@@ -243,6 +243,20 @@ echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/nul
 #restart jenkins
 sudo service jenkins restart
 
+#Add the msi credential
+msi_cred=$(cat <<EOF
+<com.microsoft.azure.util.AzureMsiCredentials>
+  <scope>GLOBAL</scope>
+  <id>local-msi</id>
+  <description></description>
+  <msiPort>50342</msiPort>
+</com.microsoft.azure.util.AzureMsiCredentials>
+EOF
+)
+echo "${msi_cred}" > msi_cred.xml
+run_util_script "jenkins/run-cli-command.sh" -c "create-credentials-by-xml system::system::jenkins _" -cif msi_cred.xml
+rm msi_cred.xml
+
 #install nginx
 sudo apt-get install nginx --yes
 
