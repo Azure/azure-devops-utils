@@ -254,7 +254,7 @@ msi_cred=$(cat <<EOF
 EOF
 )
 echo "${msi_cred}" > msi_cred.xml
-run_util_script "jenkins/run-cli-command.sh" -c "create-credentials-by-xml system::system::jenkins _" -cif msi_cred.xml
+#run_util_script "jenkins/run-cli-command.sh" -c "create-credentials-by-xml system::system::jenkins _" -cif msi_cred.xml
 rm msi_cred.xml
 
 #install nginx
