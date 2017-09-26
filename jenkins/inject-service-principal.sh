@@ -37,7 +37,6 @@ function run_util_script() {
 
 #defaults
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
-jenkins_url="http://localhost:8080"
 
 while [[ $# > 0 ]]
 do
