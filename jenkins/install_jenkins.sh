@@ -1,4 +1,5 @@
 #!/bin/bash
+echo $@
 function print_usage() {
   cat <<EOF
 Installs Jenkins and exposes it to the public through port 80 (login and cli are disabled)
@@ -9,6 +10,11 @@ Arguments
   --vm_private_ip|-pi                 : The VM private ip used to configure Jenkins URL. If missing, jenkins_fqdn will be used instead
   --jenkins_release_type|-jrt         : The Jenkins release type (LTS or weekly or verified). By default it's set to LTS
   --jenkins_version_location|-jvl     : Url used to specify the version of Jenkins.
+  --service_principal_type|-sp
+  --service_principal_id|-sid
+  --service_principal_secret|-ss
+  --subscription_id|-subid
+  --tenant_id|-tid
   --artifacts_location|-al            : Url used to reference other scripts/artifacts.
   --sas_token|-st                     : A sas token needed if the artifacts location is private.
 EOF
@@ -60,6 +66,26 @@ do
       ;;
     --jenkins_version_location|-jvl)
       jenkins_version_location="$1"
+      shift
+      ;;
+    --service_principal_type|-sp)
+      service_principal_type="$1"
+      shift
+      ;;
+    --service_principal_id|-spid)
+      service_principal_id="$1"
+      shift
+      ;;
+    --service_principal_secret|-ss)
+      service_principal_secret="$1"
+      shift
+      ;;
+    --subscription_id|-subid)
+      subscription_id="$1"
+      shift
+      ;;
+    --tenant_id|-tid)
+      tenant_id="$1"
       shift
       ;;
     --artifacts_location|-al)
@@ -226,6 +252,45 @@ for plugin in "${plugins[@]}"; do
   run_util_script "jenkins/run-cli-command.sh" -c "install-plugin $plugin -deploy"
 done
 
+#install the service principal
+msi_cred=$(cat <<EOF
+<com.microsoft.azure.util.AzureMsiCredentials>
+  <scope>GLOBAL</scope>
+  <id>local-msi</id>
+  <description></description>
+  <msiPort>50342</msiPort>
+</com.microsoft.azure.util.AzureMsiCredentials>
+EOF
+)
+sp_cred=$(cat <<EOF
+<com.microsoft.azure.util.AzureCredentials>
+  <scope>GLOBAL</scope>
+  <id>main-sp</id>
+  <description></description>
+  <data>
+    <subscriptionId>${subscription_id}</subscriptionId>
+    <clientId>${service_principal_id}</clientId>
+    <clientSecret>${service_principal_secret}</clientSecret>
+    <oauth2TokenEndpoint>https://login.windows.net/${tenant_id}</oauth2TokenEndpoint>
+    <serviceManagementURL>https://management.core.windows.net/</serviceManagementURL>
+    <tenant>${tenant_id}</tenant>
+    <authenticationEndpoint>https://login.microsoftonline.com/</authenticationEndpoint>
+    <resourceManagerEndpoint>https://management.azure.com/</resourceManagerEndpoint>
+    <graphEndpoint>https://graph.windows.net/</graphEndpoint>
+  </data>
+</com.microsoft.azure.util.AzureCredentials>
+EOF
+)
+if [ "${service_principal_type}" == 'msi' ]; then
+  echo "${msi_cred}" > msi_cred.xml
+  #run_util_script "jenkins/run-cli-command.sh" -c "create-credentials-by-xml system::system::jenkins _" -cif msi_cred.xml
+  rm msi_cred.xml
+else
+  echo "${sp_cred}" > sp_cred.xml
+  run_util_script "jenkins/run-cli-command.sh" -c "create-credentials-by-xml system::system::jenkins _" -cif sp_cred.xml
+  rm sp_cred.xml
+fi
+
 #allow anonymous read access
 inter_jenkins_config=$(sed -zr -e"s|<authorizationStrategy.*</authorizationStrategy>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
 final_jenkins_config=${inter_jenkins_config//'{auth-strategy-token}'/${jenkins_auth_matrix_conf}}
@@ -242,20 +307,6 @@ echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/nul
 
 #restart jenkins
 sudo service jenkins restart
-
-#Add the msi credential
-msi_cred=$(cat <<EOF
-<com.microsoft.azure.util.AzureMsiCredentials>
-  <scope>GLOBAL</scope>
-  <id>local-msi</id>
-  <description></description>
-  <msiPort>50342</msiPort>
-</com.microsoft.azure.util.AzureMsiCredentials>
-EOF
-)
-echo "${msi_cred}" > msi_cred.xml
-#run_util_script "jenkins/run-cli-command.sh" -c "create-credentials-by-xml system::system::jenkins _" -cif msi_cred.xml
-rm msi_cred.xml
 
 #install nginx
 sudo apt-get install nginx --yes

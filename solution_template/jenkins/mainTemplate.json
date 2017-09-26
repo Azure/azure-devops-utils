@@ -123,7 +123,6 @@
   },
   "variables": {
     "_extensionScript": "install_jenkins.sh",
-    "_spScript": "inject-service-principal.sh",
     "frontEndNSGName": "[concat(parameters('vmName'), 'NSG')]",
     "nestedUrl": "[concat(parameters('_artifactsLocation'),'/solution_template/nested')]",
     "nicName": "[concat(parameters('vmName'), 'VMNic')]",
@@ -132,6 +131,7 @@
     "subnetPrefix": "10.0.0.0/24",
     "templateUrlIP": "[concat(variables('nestedUrl'),'/publicIP-',parameters('publicIPNewOrExisting'),'.json',parameters('_artifactsLocationSasToken'))]",
     "templateUrlVM": "[concat(variables('nestedUrl'),'/VM-new-',parameters('authenticationType'),'.json',parameters('_artifactsLocationSasToken'))]",
+    "templateUrlInjectSP": "[concat(variables('nestedUrl'),'/inject-SP.json',parameters('_artifactsLocationSasToken'))]",
     "ubuntuSku": "16.04-LTS",
     "virtualNetworkName": "[concat(parameters('vmName'), 'VNET')]",
     "virtualNetworkPrefix": "10.0.0.0/16",
@@ -352,36 +352,12 @@
       "properties": {
         "autoUpgradeMinorVersion": true,
         "protectedSettings": {
-          "commandToExecute": "[concat('./' , variables('_extensionScript'), ' -jf \"', reference(variables('publicIPDeploymentName')).outputs.fqdn.value, '\" -pi \"', variables('vmPrivateIP'), '\" -jrt \"', parameters('jenkinsReleaseType') , '\" -al \"', parameters('_artifactsLocation'), '\" -st \"', parameters('_artifactsLocationSasToken'), '\"' )]"
+          "commandToExecute": "[concat('./', variables('_extensionScript'), ' -jf \"', reference(variables('publicIPDeploymentName')).outputs.fqdn.value, '\" -pi \"', variables('vmPrivateIP'), '\" -jrt \"', parameters('jenkinsReleaseType'), '\" -sp \"', parameters('spType'), '\" -spid \"', parameters('spId'), '\" -ss \"', parameters('spSecret'), '\" -subid \"', subscription().subscriptionId, '\" -tid \"', subscription().tenantId, '\" -al \"', parameters('_artifactsLocation'), '\" -st \"', parameters('_artifactsLocationSasToken'), '\"' )]"
         },
         "publisher": "Microsoft.Azure.Extensions",
         "settings": {
           "fileUris": [
             "[concat(parameters('_artifactsLocation'), '/jenkins/', variables('_extensionScript'), parameters('_artifactsLocationSasToken'))]"
-          ]
-        },
-        "type": "CustomScript",
-        "typeHandlerVersion": "2.0"
-      },
-      "type": "Microsoft.Compute/virtualMachines/extensions"
-    },
-    {
-      "apiVersion": "2015-06-15",
-      "dependsOn": [
-        "[resourceId('Microsoft.Compute/virtualMachines/extensions', parameters('vmName'), 'Init')]"
-      ],
-      "location": "[parameters('location')]",
-      "name": "[concat(parameters('vmName'), '/InjectServicePrincipal')]",
-      "condition": "[equals(parameters('spType'), 'manual')]",
-      "properties": {
-        "autoUpgradeMinorVersion": true,
-        "protectedSettings": {
-          "commandToExecute": "[concat('./' , variables('_spScript'), ' -id \"', parameters('spId'), '\" -ss \"', parameters('spSecret'), '\" -sid \"', subscription().subscriptionId, '\" -tid \"', subscription().tenantId, '\" -al \"', parameters('_artifactsLocation'), '\" -st \"', parameters('_artifactsLocationSasToken'), '\"' )]"
-        },
-        "publisher": "Microsoft.Azure.Extensions",
-        "settings": {
-          "fileUris": [
-            "[concat(parameters('_artifactsLocation'), '/jenkins/', variables('_spScript'), parameters('_artifactsLocationSasToken'))]"
           ]
         },
         "type": "CustomScript",
