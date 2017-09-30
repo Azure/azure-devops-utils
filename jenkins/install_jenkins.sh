@@ -221,7 +221,7 @@ else
 fi
 
 #We need to install workflow-aggregator so all the options in the auth matrix are valid
-plugins=(azure-vm-agents windows-azure-storage matrix-auth workflow-aggregator azure-app-service tfs)
+plugins=(azure-vm-agents windows-azure-storage matrix-auth workflow-aggregator azure-app-service tfs azure-acs azure-container-agents)
 for plugin in "${plugins[@]}"; do
   run_util_script "jenkins/run-cli-command.sh" -c "install-plugin $plugin -deploy"
 done
