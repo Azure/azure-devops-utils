@@ -68,17 +68,33 @@ if [ "$jenkins_username" != "admin" ]; then
 fi
 
 function retry_until_successful {
-    counter=0
+  counter=0
+  "${@}"
+  while [ $? -ne 0 ]; do
+    if [[ "$counter" -gt 20 ]]; then
+        exit 1
+    else
+        let counter++
+    fi
+    sleep 5
     "${@}"
-    while [ $? -ne 0 ]; do
-        if [[ "$counter" -gt 20 ]]; then
-            exit 1
-        else
-            let counter++
-        fi
-        sleep 5
-        "${@}"
-    done;
+  done;
+}
+
+function retry_until_successful_with_input {
+  input_file=$1
+  shift
+  counter=0
+  cat "$input_file" | "${@}"
+  while [ $? -ne 0 ]; do
+    if [[ "$counter" -gt 20 ]]; then
+        exit 1
+    else
+        let counter++
+    fi
+    sleep 5
+    cat "$input_file" | "${@}"
+  done;
 }
 
 if [ ! -e jenkins-cli.jar ]; then
@@ -92,8 +108,8 @@ if [ -z "$jenkins_password" ]; then
 fi
 
 >&2 echo "Running \"${command}\"..."
-if [ -z "$command_input_file" ]; then
+if [ -z "${command_input_file}" ]; then
   retry_until_successful java -jar jenkins-cli.jar -s "${jenkins_url}" -auth "${jenkins_username}":"${jenkins_password}" $command
 else
-  retry_until_successful cat "$command_input_file" | java -jar jenkins-cli.jar -s "${jenkins_url}" -auth "${jenkins_username}":"${jenkins_password}" $command
+  retry_until_successful_with_input "${command_input_file}" java -jar jenkins-cli.jar -s "${jenkins_url}" -auth "${jenkins_username}":"${jenkins_password}" $command
 fi

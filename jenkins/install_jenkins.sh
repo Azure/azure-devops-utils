@@ -252,6 +252,23 @@ for plugin in "${plugins[@]}"; do
   run_util_script "jenkins/run-cli-command.sh" -c "install-plugin $plugin -deploy"
 done
 
+#allow anonymous read access
+inter_jenkins_config=$(sed -zr -e"s|<authorizationStrategy.*</authorizationStrategy>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
+final_jenkins_config=${inter_jenkins_config//'{auth-strategy-token}'/${jenkins_auth_matrix_conf}}
+echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
+
+#set up Jenkins URL to private_ip:8080 so JNLP connections can be established
+echo "${jenkins_location_conf}" | sudo tee /var/lib/jenkins/jenkins.model.JenkinsLocationConfiguration.xml > /dev/null
+
+#disable 'It appears that your reverse proxy set up is broken' warning.
+# This is visible when connecting through SSH tunneling
+inter_jenkins_config=$(sed -zr -e"s|<disabledAdministrativeMonitors/>|{disable-reverse-proxy-token}|" /var/lib/jenkins/config.xml)
+final_jenkins_config=${inter_jenkins_config//'{disable-reverse-proxy-token}'/${jenkins_disable_reverse_proxy_warning}}
+echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
+
+#restart jenkins
+sudo service jenkins restart
+
 #install the service principal
 msi_cred=$(cat <<EOF
 <com.microsoft.azure.util.AzureMsiCredentials>
@@ -290,23 +307,6 @@ else
   run_util_script "jenkins/run-cli-command.sh" -c "create-credentials-by-xml system::system::jenkins _" -cif sp_cred.xml
   rm sp_cred.xml
 fi
-
-#allow anonymous read access
-inter_jenkins_config=$(sed -zr -e"s|<authorizationStrategy.*</authorizationStrategy>|{auth-strategy-token}|" /var/lib/jenkins/config.xml)
-final_jenkins_config=${inter_jenkins_config//'{auth-strategy-token}'/${jenkins_auth_matrix_conf}}
-echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
-
-#set up Jenkins URL to private_ip:8080 so JNLP connections can be established
-echo "${jenkins_location_conf}" | sudo tee /var/lib/jenkins/jenkins.model.JenkinsLocationConfiguration.xml > /dev/null
-
-#disable 'It appears that your reverse proxy set up is broken' warning.
-# This is visible when connecting through SSH tunneling
-inter_jenkins_config=$(sed -zr -e"s|<disabledAdministrativeMonitors/>|{disable-reverse-proxy-token}|" /var/lib/jenkins/config.xml)
-final_jenkins_config=${inter_jenkins_config//'{disable-reverse-proxy-token}'/${jenkins_disable_reverse_proxy_warning}}
-echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
-
-#restart jenkins
-sudo service jenkins restart
 
 #install nginx
 sudo apt-get install nginx --yes
