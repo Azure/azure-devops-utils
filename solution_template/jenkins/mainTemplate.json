@@ -48,6 +48,13 @@
       },
       "type": "string"
     },
+    "enableCloudAgents":{
+      "defaultValue": "aci",
+      "metadata": {
+        "description": "Whether add a default cloud template for agents"
+      },
+      "type": "string"
+    },
     "jenkinsReleaseType": {
       "metadata": {
         "description": "Jenkins release type (LTS or weekly or verified)"
@@ -90,14 +97,14 @@
     "spId":{
       "defaultValue": "",
       "metadata": {
-        "description": ""
+        "description": "The Service Principal Id"
       },
       "type": "string"
     },
     "spSecret":{
       "defaultValue": "",
       "metadata": {
-        "description": ""
+        "description": "The Service Principal secret"
       },
       "type": "string"
     },
@@ -131,7 +138,6 @@
     "subnetPrefix": "10.0.0.0/24",
     "templateUrlIP": "[concat(variables('nestedUrl'),'/publicIP-',parameters('publicIPNewOrExisting'),'.json',parameters('_artifactsLocationSasToken'))]",
     "templateUrlVM": "[concat(variables('nestedUrl'),'/VM-new-',parameters('authenticationType'),'.json',parameters('_artifactsLocationSasToken'))]",
-    "templateUrlInjectSP": "[concat(variables('nestedUrl'),'/inject-SP.json',parameters('_artifactsLocationSasToken'))]",
     "ubuntuSku": "16.04-LTS",
     "virtualNetworkName": "[concat(parameters('vmName'), 'VNET')]",
     "virtualNetworkPrefix": "10.0.0.0/16",
@@ -195,6 +201,20 @@
               "destinationPortRange": "80",
               "direction": "Inbound",
               "priority": 101,
+              "protocol": "Tcp",
+              "sourceAddressPrefix": "Internet",
+              "sourcePortRange": "*"
+            }
+          },
+          {
+            "name": "jnlp-rule",
+            "properties": {
+              "access": "Allow",
+              "description": "Allow JNLP",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "5378",
+              "direction": "Inbound",
+              "priority": 110,
               "protocol": "Tcp",
               "sourceAddressPrefix": "Internet",
               "sourcePortRange": "*"
@@ -352,7 +372,7 @@
       "properties": {
         "autoUpgradeMinorVersion": true,
         "protectedSettings": {
-          "commandToExecute": "[concat('./', variables('_extensionScript'), ' -jf \"', reference(variables('publicIPDeploymentName')).outputs.fqdn.value, '\" -pi \"', variables('vmPrivateIP'), '\" -jrt \"', parameters('jenkinsReleaseType'), '\" -sp \"', parameters('spType'), '\" -spid \"', parameters('spId'), '\" -ss \"', parameters('spSecret'), '\" -subid \"', subscription().subscriptionId, '\" -tid \"', subscription().tenantId, '\" -al \"', parameters('_artifactsLocation'), '\" -st \"', parameters('_artifactsLocationSasToken'), '\"' )]"
+          "commandToExecute": "[concat('./', variables('_extensionScript'), ' -ca \"', parameters('enableCloudAgents'), '\" -jf \"', reference(variables('publicIPDeploymentName')).outputs.fqdn.value, '\" -jrt \"', parameters('jenkinsReleaseType'), '\" -lo \"', resourceGroup().location, '\" -rg \"', resourceGroup().name, '\" -sp \"', parameters('spType'), '\" -spid \"', parameters('spId'), '\" -ss \"', parameters('spSecret'), '\" -subid \"', subscription().subscriptionId, '\" -tid \"', subscription().tenantId, '\" -al \"', parameters('_artifactsLocation'), '\" -st \"', parameters('_artifactsLocationSasToken'), '\"' )]"
         },
         "publisher": "Microsoft.Azure.Extensions",
         "settings": {

@@ -200,21 +200,50 @@
               {
                 "name": "spid",
                 "type": "Microsoft.Common.TextBox",
-                "label": "Service Principal ID",
+                "label": "Application ID",
                 "defaultValue": "",
                 "toolTip": "",
                 "visible": true
               },
               {
                 "name": "spsecret",
-                "type": "Microsoft.Common.TextBox",
-                "label": "Secret",
-                "defaultValue": "",
+                "type": "Microsoft.Common.PasswordBox",
+                "label": {
+                  "password":"Secret",
+                  "confirmPassword": ""
+                },
                 "toolTip": "",
+                "options": {
+                  "hideConfirmation": true
+                },
                 "visible": true
               }
             ],
             "visible": "[equals(steps('secondStep').sptype,'manual')]"
+          },
+          {
+            "name": "enableCloudAgents",
+            "type": "Microsoft.Common.OptionsGroup",
+            "label": "Enable Cloud Agents",
+            "defaultValue": "ACI",
+            "toolTip": "Add a default cloud template for agents. ACI: Azure Container Instance, VM: virtual machine.",
+            "constraints": {
+              "allowedValues": [
+                {
+                  "label": "No",
+                  "value": "no"
+                },
+                {
+                  "label": "ACI",
+                  "value": "aci"
+                },
+                {
+                  "label": "VM",
+                  "value": "vm"
+                }
+              ]
+            },
+            "visible": true
           }
         ]
       }
@@ -235,7 +264,8 @@
       "jenkinsReleaseType": "[steps('firstStep').jenkinsReleaseType]",
       "spType": "[steps('secondStep').sptype]",
       "spId": "[steps('secondStep').section1.spid]",
-      "spSecret": "[steps('secondStep').section1.spsecret]"
+      "spSecret": "[steps('secondStep').section1.spsecret]",
+      "enableCloudAgents": "[steps('secondStep').enableCloudAgents]"
     }
   }
 }
