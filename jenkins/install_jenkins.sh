@@ -17,9 +17,9 @@ Arguments
   --tenant_id|-tid                    : The tenant id of the SP.
   --artifacts_location|-al            : Url used to reference other scripts/artifacts.
   --sas_token|-st                     : A sas token needed if the artifacts location is private.
-  --cloud_agents|-ca                  : aci, vm or no
-  --resource_group|-rg                :     
-  --location|-lo                      : 
+  --cloud_agents|-ca                  : The type of the cloud agents: aci, vm or no.
+  --resource_group|-rg                : the resource group name.
+  --location|-lo                      : the resource group location.
 EOF
 }
 
