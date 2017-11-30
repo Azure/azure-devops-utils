@@ -193,7 +193,7 @@
             "visible": true
           },
           {
-            "name": "section1",
+            "name": "spSection",
             "type": "Microsoft.Common.Section",
             "label": "Service Principal",
             "elements": [
@@ -263,8 +263,8 @@
       "location": "[location()]",
       "jenkinsReleaseType": "[steps('firstStep').jenkinsReleaseType]",
       "spType": "[steps('secondStep').sptype]",
-      "spId": "[steps('secondStep').section1.spid]",
-      "spSecret": "[steps('secondStep').section1.spsecret]",
+      "spId": "[steps('secondStep').spSection.spid]",
+      "spSecret": "[steps('secondStep').spSection.spsecret]",
       "enableCloudAgents": "[steps('secondStep').enableCloudAgents]"
     }
   }

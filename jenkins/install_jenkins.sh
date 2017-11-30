@@ -295,7 +295,7 @@ sudo service jenkins restart
 msi_cred=$(cat <<EOF
 <com.microsoft.azure.util.AzureMsiCredentials>
   <scope>GLOBAL</scope>
-  <id>sp</id>
+  <id>azure_service_principal</id>
   <description>Local MSI</description>
   <msiPort>50342</msiPort>
 </com.microsoft.azure.util.AzureMsiCredentials>
@@ -304,7 +304,7 @@ EOF
 sp_cred=$(cat <<EOF
 <com.microsoft.azure.util.AzureCredentials>
   <scope>GLOBAL</scope>
-  <id>sp</id>
+  <id>azure_service_principal</id>
   <description>Manual Service Principal</description>
   <data>
     <subscriptionId>${subscription_id}</subscriptionId>
@@ -335,7 +335,7 @@ vm_agent_conf=conf=$(cat <<EOF
 <clouds>
   <com.microsoft.azure.vmagent.AzureVMCloud>
     <name>AzureVMAgents</name>
-    <credentialsId>sp</credentialsId>
+    <credentialsId>azure_service_principal</credentialsId>
     <maxVirtualMachinesLimit>10</maxVirtualMachinesLimit>
     <resourceGroupReferenceType>existing</resourceGroupReferenceType>
     <existingResourceGroupName>${resource_group}</existingResourceGroupName>
@@ -353,7 +353,7 @@ vm_agent_conf=conf=$(cat <<EOF
         <shutdownOnIdle>false</shutdownOnIdle>
         <imageTopLevelType>basic</imageTopLevelType>
         <builtInImage>Windows Server 2016</builtInImage>
-        <credentialsId>agent</credentialsId>
+        <credentialsId>agent_admin_account</credentialsId>
         <retentionTimeInMin>60</retentionTimeInMin>
       </com.microsoft.azure.vmagent.AzureVMAgentTemplate>
       <com.microsoft.azure.vmagent.AzureVMAgentTemplate>
@@ -369,7 +369,7 @@ vm_agent_conf=conf=$(cat <<EOF
         <shutdownOnIdle>false</shutdownOnIdle>
         <imageTopLevelType>basic</imageTopLevelType>
         <builtInImage>Ubuntu 16.04 LTS</builtInImage>
-        <credentialsId>agent</credentialsId>
+        <credentialsId>agent_admin_account</credentialsId>
         <retentionTimeInMin>60</retentionTimeInMin>
       </com.microsoft.azure.vmagent.AzureVMAgentTemplate>
     </vmTemplates>
@@ -384,7 +384,7 @@ aci_agent_conf=$(cat <<EOF
 <clouds>
   <com.microsoft.jenkins.containeragents.aci.AciCloud>
     <name>AciAgents</name>
-    <credentialsId>sp</credentialsId>
+    <credentialsId>azure_service_principal</credentialsId>
     <resourceGroup>${resource_group}</resourceGroup>
     <templates>
       <com.microsoft.jenkins.containeragents.aci.AciContainerTemplate>
@@ -404,13 +404,14 @@ aci_agent_conf=$(cat <<EOF
 EOF
 )
 
+agent_admin_password=$(head /dev/urandom | tr -dc A-Z | head -c 4)$(head /dev/urandom | tr -dc a-z | head -c 4)$(head /dev/urandom | tr -dc 0-9 | head -c 4)'!@'
 agent_admin_cred=$(cat <<EOF
 <com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
   <scope>GLOBAL</scope>
-  <id>agent</id>
+  <id>agent_admin_account</id>
   <description>the admin account for the vm agents</description>
   <username>agentadmin</username>
-  <password>1234QWERasdf#</password>
+  <password>${agent_admin_password}</password>
 </com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl>
 EOF
 )
