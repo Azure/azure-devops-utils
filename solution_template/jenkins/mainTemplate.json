@@ -6,7 +6,7 @@
       "metadata": {
         "description": "Artifacts location"
       },
-      "defaultValue": "https://raw.githubusercontent.com/LGDoor/azure-devops-utils/master/",
+      "defaultValue": "https://raw.githubusercontent.com/Azure/azure-devops-utils/v0.29.0/",
       "type": "string"
     },
     "_artifactsLocationSasToken": {
