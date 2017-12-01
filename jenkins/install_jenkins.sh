@@ -44,6 +44,20 @@ function run_util_script() {
   fi
 }
 
+function retry_until_successful {
+  counter=0
+  "${@}"
+  while [ $? -ne 0 ]; do
+    if [[ "$counter" -gt 20 ]]; then
+        exit 1
+    else
+        let counter++
+    fi
+    sleep 5
+    "${@}"
+  done;
+}
+
 #defaults
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
 jenkins_version_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/jenkins/jenkins-verified-ver"
@@ -263,6 +277,9 @@ else
   sudo apt-get install jenkins --yes # sometime the first apt-get install jenkins command fails, so we try it twice
 fi
 
+retry_until_successful sudo test -f /var/lib/jenkins/secrets/initialAdminPassword
+retry_until_successful run_util_script "jenkins/run-cli-command.sh" -c "version"
+
 #We need to install workflow-aggregator so all the options in the auth matrix are valid
 plugins=(azure-vm-agents windows-azure-storage matrix-auth workflow-aggregator azure-app-service tfs azure-acs azure-container-agents)
 for plugin in "${plugins[@]}"; do
@@ -320,6 +337,9 @@ sp_cred=$(cat <<EOF
 </com.microsoft.azure.util.AzureCredentials>
 EOF
 )
+
+retry_until_successful run_util_script "jenkins/run-cli-command.sh" -c "version"
+
 if [ "${service_principal_type}" == 'msi' ]; then
   echo "${msi_cred}" > msi_cred.xml
   run_util_script "jenkins/run-cli-command.sh" -c "create-credentials-by-xml system::system::jenkins _" -cif msi_cred.xml
