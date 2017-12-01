@@ -225,7 +225,7 @@
             "name": "enableCloudAgents",
             "type": "Microsoft.Common.OptionsGroup",
             "label": "Enable Cloud Agents",
-            "defaultValue": "ACI",
+            "defaultValue": "VM",
             "toolTip": "Add a default cloud template for agents. ACI: Azure Container Instance, VM: virtual machine.",
             "constraints": {
               "allowedValues": [
