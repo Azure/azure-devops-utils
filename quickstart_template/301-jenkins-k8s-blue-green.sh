@@ -125,7 +125,13 @@ install_az
 sudo apt-get install --yes jq
 
 #install jenkins
-run_util_script "jenkins/install_jenkins.sh" -jf "${jenkins_fqdn}" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
+#install jenkins
+run_util_script "jenkins/install_jenkins.sh" \
+  --jenkins_release_type verified \
+  --jenkins_version_location "${artifacts_location}jenkins/blue-green/verified-jenkins-version${artifacts_location_sas_token}" \
+  --jenkins_fqdn "${jenkins_fqdn}" \
+  --artifacts_location "${artifacts_location}" \
+  --sas_token "${artifacts_location_sas_token}"
 
 run_util_script "jenkins/run-cli-command.sh" -c "install-plugin ssh-agent -deploy"
 
