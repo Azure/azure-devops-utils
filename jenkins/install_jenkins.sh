@@ -335,13 +335,14 @@ vm_agent_conf=conf=$(cat <<EOF
 <clouds>
   <com.microsoft.azure.vmagent.AzureVMCloud>
     <name>AzureVMAgents</name>
+    <cloudName>AzureVMAgents</cloudName>
     <credentialsId>azure_service_principal</credentialsId>
     <maxVirtualMachinesLimit>10</maxVirtualMachinesLimit>
     <resourceGroupReferenceType>existing</resourceGroupReferenceType>
     <existingResourceGroupName>${resource_group}</existingResourceGroupName>
     <vmTemplates>
       <com.microsoft.azure.vmagent.AzureVMAgentTemplate>
-        <templateName>windows-agent</templateName>
+        <templateName>win-agent</templateName>
         <labels>win</labels>
         <location>${location}</location>
         <virtualMachineSize>Standard_D1_v2</virtualMachineSize>
