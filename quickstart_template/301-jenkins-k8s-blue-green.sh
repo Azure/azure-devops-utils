@@ -11,7 +11,7 @@ Arguments
   --subscription_id|-si              [Required] : Subscription Id
   --tenant_id|-ti                    [Required] : Tenant Id
   --resource_group|-rg               [Required] : Resource group containing your Kubernetes cluster
-  --acs_name|-an                     [Required] : Name of the ACS cluster with Kubernetes orchestrator
+  --aks_name|-an                     [Required] : Name of the Azure Kubernetes Service
   --jenkins_fqdn|-jf                 [Required] : Jenkins FQDN
   --artifacts_location|-al                      : Url used to reference other scripts/artifacts.
   --sas_token|-st                               : A sas token needed if the artifacts location is private.
@@ -57,30 +57,6 @@ function install_az() {
   fi
 }
 
-function allow_acs_nsg_access()
-{
-  local source_ip=$1
-  local resource_group=$2
-
-  local nsgs=($(az network nsg list --resource-group "$resource_group" --query '[].name' --output tsv | grep -e "^k8s-master-"))
-  local port_range=22
-  if [ "$source_ip" = Internet ]; then
-    # web job deletes the rule if the port is set to 22 for wildcard internet access
-    port_range="21-23"
-  fi
-  for nsg in "${nsgs[@]}"; do
-    local name="allow_$source_ip"
-    # used a fixed priority here
-    local max_priority="$(az network nsg rule list -g "$resource_group" --nsg-name "$nsg" --query '[].priority' --output tsv | sort -n | tail -n1)"
-    local priority="$(expr "$max_priority" + 50)"
-    log_info "Add allow $source_ip rules to NSG $nsg in resource group $resource_group, with priority $priority"
-    az network nsg rule create --priority "$priority" --destination-port-ranges "$port_range" --resource-group "$resource_group" \
-        --nsg-name "$nsg" --name "$name" --source-address-prefixes "$source_ip"
-    #az network nsg rule create --priority "$priority" --destination-port-ranges 22 --resource-group "$resource_group" \
-    #    --nsg-name "$nsg" --name "$name" --source-address-prefixes "$source_ip"
-  done
-}
-
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
 
 while [[ $# > 0 ]]
@@ -108,8 +84,8 @@ do
       resource_group="$1"
       shift
       ;;
-    --acs_name|-an)
-      acs_name="$1"
+    --aks_name|-an)
+      aks_name="$1"
       shift
       ;;
     --jenkins_fqdn|-jf)
@@ -139,7 +115,7 @@ throw_if_empty --app_key "$app_key"
 throw_if_empty --subscription_id "$subscription_id"
 throw_if_empty --tenant_id "$tenant_id"
 throw_if_empty --resource_group "$resource_group"
-throw_if_empty --acs_name "$acs_name"
+throw_if_empty --aks_name "$aks_name"
 throw_if_empty --jenkins_fqdn "$jenkins_fqdn"
 
 install_kubectl
@@ -147,37 +123,6 @@ install_kubectl
 install_az
 
 sudo apt-get install --yes jq
-
-az login --service-principal -u "$app_id" -p "$app_key" --tenant "$tenant_id"
-az account set --subscription "$subscription_id"
-master_fqdn="$(az acs show --resource-group "$resource_group" --name "$acs_name" --query masterProfile.fqdn --output tsv)"
-master_username="$(az acs show --resource-group "$resource_group" --name "$acs_name" --query linuxProfile.adminUsername --output tsv)"
-
-temp_user_name="$(uuidgen | sed 's/-//g')"
-temp_key_path="$(mktemp -d)/temp_key"
-ssh-keygen -t rsa -N "" -f "$temp_key_path"
-temp_pub_key="${temp_key_path}.pub"
-
-# Allow Jenkins master to access the ACS K8s master via SSH
-jenkins_ip=($(dig +short "$jenkins_fqdn"))
-for ip in "${jenkins_ip[@]}"; do
-  [[ -z "$ip" ]] && continue
-  allow_acs_nsg_access "$ip" "$resource_group"
-done
-
-master_vm_ids=$(az vm list -g "$resource_group" --query "[].id" -o tsv | grep "k8s-master-")
->&2 echo "Master VM ids: $master_vm_ids"
-
-# Add the generated SSH public key to the authroized keys for the Kubernetes master admin user in two steps:
-#   1. add a temporary user using Azure CLI with the generated username and public key
-#   2. login with the temporary user, and append its .ssh/authorized_keys which is the generated public key to the master user's authorized_keys list.
-# this will be used in Jenkins to authenticate with the Kubernetes master node via SSH
-az vm user update -u "$temp_user_name" --ssh-key-value "$temp_pub_key" --ids "$master_vm_ids"
-ssh -o StrictHostKeyChecking=no -i "$temp_key_path" "$temp_user_name@$master_fqdn" "[ -d '/home/$master_username' ] && (cat .ssh/authorized_keys | sudo tee -a /home/$master_username/.ssh/authorized_keys)"
-
-# Remove temporary credentials on every kubernetes master vm
-az vm user delete -u "$temp_user_name" --ids "$master_vm_ids"
-az logout
 
 #install jenkins
 run_util_script "jenkins/install_jenkins.sh" -jf "${jenkins_fqdn}" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
@@ -187,10 +132,8 @@ run_util_script "jenkins/run-cli-command.sh" -c "install-plugin ssh-agent -deplo
 run_util_script "jenkins/blue-green/add-blue-green-job.sh" \
     -j "http://localhost:8080/" \
     -ju "admin" \
-    --acs_resource_group "$resource_group" \
-    --acs_name "$acs_name" \
-    --ssh_credentials_username "$master_username" \
-    --ssh_credentials_key_file "$temp_key_path" \
+    --aks_resource_group "$resource_group" \
+    --aks_name "$aks_name" \
     --sp_subscription_id "$subscription_id" \
     --sp_client_id "$app_id" \
     --sp_client_password "$app_key" \

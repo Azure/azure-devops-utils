@@ -12,8 +12,8 @@
   <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.41">
     <script><![CDATA[
 node {
-    def resourceGroup = '{insert-acs-resource-group}'
-    def acs = '{insert-acs-name}'
+    def resourceGroup = '{insert-aks-resource-group}'
+    def aks = '{insert-aks-name}'
     def currentEnvironment = 'blue'
     def newEnvironment = { ->
         currentEnvironment == 'blue' ? 'green' : 'blue'
@@ -158,20 +158,16 @@ spec:
         // We add it here to keep it simple so that we don't have to configure another job for demonstration.
         acsDeploy azureCredentialsId: 'sp', 
                   configFilePaths: 'k8s/test-endpoint-*.yml',
-                  containerService: "$acs | Kubernetes",
-                  resourceGroupName: resourceGroup,
-                  sshCredentialsId: 'k8s-ssh'
+                  containerService: "$aks | AKS",
+                  resourceGroupName: resourceGroup
     }
 
     stage('Check Env') {
         withCredentials([azureServicePrincipal('sp')]) {
-            sshagent(['k8s-ssh']) {
-                sh """
+            sh """
 az login --service-principal -u "\$AZURE_CLIENT_ID" -p "\$AZURE_CLIENT_SECRET" -t "\$AZURE_TENANT_ID"
 az account set --subscription "\$AZURE_SUBSCRIPTION_ID"
-acs_host=\$(az acs show --resource-group "${resourceGroup}" --name "${acs}" --query "[linuxProfile.adminUsername, masterProfile.fqdn] | join('@', @)" --output tsv)
-#az acs kubernetes get-credentials --resource-group "${resourceGroup}" --name "${acs}" --file ./kubeconfig
-scp -o StrictHostKeyChecking=no "\$acs_host:.kube/config" kubeconfig
+az aks get-credentials --resource-group "${resourceGroup}" --name "${aks}" --admin --file kubeconfig
 if kubectl --kubeconfig kubeconfig get services --selector='app=tomcat,role=green' --no-headers --output json | jq -r '.items[].metadata.name' | grep -e '^tomcat-service\$'; then
     echo "Current environment: green"
     echo green >current-environment
@@ -179,8 +175,8 @@ else
     echo "Current environment: blue"
     echo blue >current-environment
 fi
+az logout
 """
-            }
         }
     }
 
@@ -195,9 +191,8 @@ fi
         
         acsDeploy azureCredentialsId: 'sp',
                   configFilePaths: "k8s/deployment-${newEnvironment()}.yml",
-                  containerService: "$acs | Kubernetes",
-                  resourceGroupName: resourceGroup,
-                  sshCredentialsId: 'k8s-ssh'
+                  containerService: "$aks | AKS",
+                  resourceGroupName: resourceGroup
     }
 
     stage('Verify Staged') {
@@ -236,9 +231,8 @@ done
     stage('Switch') {
         acsDeploy azureCredentialsId: 'sp',
                   configFilePaths: "k8s/service-${newEnvironment()}.yml",
-                  containerService: "$acs | Kubernetes",
-                  resourceGroupName: resourceGroup,
-                  sshCredentialsId: 'k8s-ssh'
+                  containerService: "$aks | AKS",
+                  resourceGroupName: resourceGroup
     }
 
     stage('Verify Prod') {
@@ -271,6 +265,7 @@ while true; do
     echo "Prod environment not ready, wait 10 seconds..."
     sleep 10
 done
+rm -f kubeconfig
 """
     }
 }
