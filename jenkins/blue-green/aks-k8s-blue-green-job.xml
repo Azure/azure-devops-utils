@@ -117,11 +117,11 @@ spec:
           httpGet:
             path: /
             port: 8080
-      strategy:
-        type: RollingUpdate
-        rollingUpdate:
-          maxUnavailable: 1
-          maxSurge: 50%'''
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 50%'''
         
         writeFile file: 'k8s/deployment-green.yml', text: '''
 apiVersion: extensions/v1beta1
@@ -145,11 +145,11 @@ spec:
           httpGet:
             path: /
             port: 8080
-      strategy:
-        type: RollingUpdate
-        rollingUpdate:
-          maxUnavailable: 1
-          maxSurge: 50%'''
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 50%'''
     }
 
     stage('Ensure Test Endpoints') {
