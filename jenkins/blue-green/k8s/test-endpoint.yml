@@ -1,0 +1,15 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: tomcat-test-${TARGET_ROLE}
+  labels:
+    app: tomcat
+    role: test-${TARGET_ROLE}
+spec:
+  type: LoadBalancer
+  selector:
+    app: tomcat
+    role: ${TARGET_ROLE}
+  ports:
+    - port: 80
+      targetPort: 8080

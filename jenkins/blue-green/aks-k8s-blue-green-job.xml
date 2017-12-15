@@ -5,6 +5,21 @@
   <displayName>{insert-job-display-name}</displayName>
   <keepDependencies>false</keepDependencies>
   <properties>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.ChoiceParameterDefinition>
+          <name>TOMCAT_VERSION</name>
+          <description>The Tomcat version that will be deployed and activated.</description>
+          <choices class="java.util.Arrays$ArrayList">
+            <a class="string-array">
+              <string>7-jre8</string>
+              <string>8-jre8</string>
+              <string>9-jre8</string>
+            </a>
+          </choices>
+        </hudson.model.ChoiceParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
     <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
       <triggers/>
     </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
@@ -14,259 +29,129 @@
 node {
     def resourceGroup = '{insert-aks-resource-group}'
     def aks = '{insert-aks-name}'
+    def artifactsLocation = '{insert-artifacts-location}'
+    def sasToken = '{insert-sas-token}'
+
     def currentEnvironment = 'blue'
     def newEnvironment = { ->
         currentEnvironment == 'blue' ? 'green' : 'blue'
     }
     def expectedTomcatVersion = { ->
-        newEnvironment() == 'blue' ? '7' : '8'
+        def match = (env.TOMCAT_VERSION =~ /\d+/)
+        match[0]
     }
 
-    stage('Prepare Sources') {
-        // here we generate all the Kubernetes configurations in the pipeline just for demostration,
-        // in the real world projects, we will fetch the configurations from SCM most of the time.
-        writeFile file: 'k8s/service-blue.yml', text: '''
-kind: Service
-apiVersion: v1
-metadata:
-  name: tomcat-service
-  labels:
-    app: tomcat
-    role: blue
-    env: prod
-spec:
-  type: LoadBalancer
-  selector:
-    app: tomcat
-    role: blue
-  ports:
-    - port: 80
-      targetPort: 8080'''
-      
-        writeFile file: 'k8s/test-endpoint-blue.yml', text: '''
-kind: Service
-apiVersion: v1
-metadata:
-  name: tomcat-test-blue
-  labels:
-    app: tomcat
-    role: test-blue
-spec:
-  type: LoadBalancer
-  selector:
-    app: tomcat
-    role: blue
-  ports:
-    - port: 80
-      targetPort: 8080'''
-        
-        writeFile file: 'k8s/service-green.yml', text: '''
-kind: Service
-apiVersion: v1
-metadata:
-  name: tomcat-service
-  labels:
-    app: tomcat
-    role: green
-    env: prod
-spec:
-  type: LoadBalancer
-  selector:
-    app: tomcat
-    role: green
-  ports:
-    - port: 80
-      targetPort: 8080'''
-
-        writeFile file: 'k8s/test-endpoint-green.yml', text: '''
-kind: Service
-apiVersion: v1
-metadata:
-  name: tomcat-test-green
-  labels:
-    app: tomcat
-    role: test-green
-spec:
-  type: LoadBalancer
-  selector:
-    app: tomcat
-    role: green
-  ports:
-    - port: 80
-      targetPort: 8080'''
-        
-        writeFile file: 'k8s/deployment-blue.yml', text: '''
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: tomcat-deployment-blue
-spec:
-  replicas: 2
-  template:
-    metadata:
-      labels:
-        app: tomcat
-        role: blue
-    spec:
-      containers:
-      - name: tomcat-container
-        image: tomcat:7.0-jre7
-        ports:
-        - containerPort: 8080
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 8080
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 50%'''
-        
-        writeFile file: 'k8s/deployment-green.yml', text: '''
-apiVersion: extensions/v1beta1
-kind: Deployment
-metadata:
-  name: tomcat-deployment-green
-spec:
-  replicas: 2
-  template:
-    metadata:
-      labels:
-        app: tomcat
-        role: green
-    spec:
-      containers:
-      - name: tomcat-container
-        image: tomcat:8.0-jre8
-        ports:
-        - containerPort: 8080
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 8080
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 50%'''
+    stage('Pre-clean') {
+        cleanWs()
     }
 
-    stage('Ensure Test Endpoints') {
-        // Generally, this should be prepared out of the deployment pipeline.
-        // And it's less likely to be changed during the deployment.
-        // We add it here to keep it simple so that we don't have to configure another job for demonstration.
-        acsDeploy azureCredentialsId: 'sp', 
-                  configFilePaths: 'k8s/test-endpoint-*.yml',
-                  containerService: "$aks | AKS",
-                  resourceGroupName: resourceGroup
+    stage('SCM') {
+        // We use scripts to fetch the Kubernetes configurations here.
+        // In real world projects, this is likely to be done using source code management tool like git.
+        sh """
+          curl --silent "${artifactsLocation}jenkins/blue-green/fetch-k8s-deployment-config.sh" | bash -s -- --artifacts_location "${artifactsLocation}" --sas_token "${sasToken}" --directory k8s
+          test -e k8s/service.yml
+          test -e k8s/deployment.yml
+        """
+    }
+
+    stage('Prepare Image') {
+        // Genarally, you need to build a docker image with the latest project artifacts, and push it to a docker repository.
+        // Here we use the public tomcat library images for demonstration, and do simple existence verification.
+
+        sh """
+          image_id="\$(curl -s "https://hub.docker.com/v2/repositories/library/tomcat/tags/${env.TOMCAT_VERSION}/" | jq .id)"
+          if [ "\$image_id" = null ]; then
+              echo "Tomcat version '${env.TOMCAT_VERSION}' was not found in Docker Hub" >&2
+              exit 1
+          fi
+        """
     }
 
     stage('Check Env') {
+        // check the current active environment to determine the inactive one that will be deployed to
+
         withCredentials([azureServicePrincipal('sp')]) {
+            // fetch the current service configuration
             sh """
-az login --service-principal -u "\$AZURE_CLIENT_ID" -p "\$AZURE_CLIENT_SECRET" -t "\$AZURE_TENANT_ID"
-az account set --subscription "\$AZURE_SUBSCRIPTION_ID"
-az aks get-credentials --resource-group "${resourceGroup}" --name "${aks}" --admin --file kubeconfig
-if kubectl --kubeconfig kubeconfig get services --selector='app=tomcat,role=green' --no-headers --output json | jq -r '.items[].metadata.name' | grep -e '^tomcat-service\$'; then
-    echo "Current environment: green"
-    echo green >current-environment
-else
-    echo "Current environment: blue"
-    echo blue >current-environment
-fi
-az logout
-"""
+              az login --service-principal -u "\$AZURE_CLIENT_ID" -p "\$AZURE_CLIENT_SECRET" -t "\$AZURE_TENANT_ID"
+              az account set --subscription "\$AZURE_SUBSCRIPTION_ID"
+              az aks get-credentials --resource-group "${resourceGroup}" --name "${aks}" --admin --file kubeconfig
+              az logout
+              current_role="\$(kubectl --kubeconfig kubeconfig get services tomcat-service --output json | jq -r .spec.selector.role)"
+              if [ "\$current_role" = null ]; then
+                  echo "Unable to determine current environment"
+                  exit 1
+              fi
+              echo "\$current_role" >current-environment
+            """
         }
+
+        // parse the current active backend
+        currentEnvironment = readFile('current-environment').trim()
+
+        // set the build name
+        echo "***************************  CURRENT: $currentEnvironment     NEW: ${newEnvironment()}  *****************************"
+        currentBuild.displayName = newEnvironment().toUpperCase() + ' ' + env.TOMCAT_VERSION
+
+        env.TARGET_ROLE = newEnvironment()
     }
 
     stage('Deploy') {
-        // here we always deploy the same Kubernetes configuration to the same deployment, but this is only for a deployment demonstration.
-        // In the real world projects, we would update the image with a new version and upgrade the corresponding deployment.
-        currentEnvironment = readFile('current-environment').trim()
-
-        echo "***************************  CURRENT: $currentEnvironment     NEW: ${newEnvironment()}  *****************************"
-
-        currentBuild.displayName = newEnvironment().toUpperCase() + ' Deployment'
-        
+        // Apply the deployments to AKS.
+        // With enableConfigSubstitution set to true, the variables ${TARGET_ROLE}, ${TOMCAT_VERSION} 
+        // will be replaced with environment variable values
         acsDeploy azureCredentialsId: 'sp',
-                  configFilePaths: "k8s/deployment-${newEnvironment()}.yml",
+                  configFilePaths: "k8s/deployment.yml",
                   containerService: "$aks | AKS",
-                  resourceGroupName: resourceGroup
+                  resourceGroupName: resourceGroup,
+                  enableConfigSubstitution: true
+    }
+
+    def verifyEnvironment = { service, version ->
+        sh """
+          endpoint_ip="\$(kubectl --kubeconfig=kubeconfig get services '${service}' --output json | jq -r '.status.loadBalancer.ingress[0].ip')"
+          count=0
+          while true; do
+              count=\$(expr \$count + 1)
+              if curl -m 10 "http://\$endpoint_ip" | grep -o "Apache Tomcat/${version}"; then
+                  break;
+              fi
+              if [ "\$count" -gt 30 ]; then
+                  echo 'Timeout while waiting for the ${service} endpoint to be ready'
+                  exit 1
+              fi
+              echo "${service} endpoint is not ready, wait 10 seconds..."
+              sleep 10
+          done
+        """
     }
 
     stage('Verify Staged') {
-        sh """
-count=0
-while true; do
-    count=\$(expr \$count + 1)
-    test_ip=\$(kubectl --kubeconfig=kubeconfig get services --selector='app=tomcat,role=test-${newEnvironment()}' --output json | jq -r '.items[0].status.loadBalancer.ingress[0].ip')
-    if [ "\$test_ip" != null ]; then
-        echo 'Test Server IP: \$test_ip'
-        break
-    fi
-    if [ "\$count" -gt 30 ]; then
-        echo 'Timeout while waiting for the test server IP'
-        exit -1
-    fi
-    echo "Test server IP not ready, sleep 10 seconds..."
-    sleep 10
-done
-count=0
-while true; do
-    count=\$(expr \$count + 1)
-    if curl "http://\$test_ip" | grep -o "Apache Tomcat/${expectedTomcatVersion()}"; then
-        break;
-    fi
-    if [ "\$count" -gt 30 ]; then
-        echo 'Timeout while waiting for the staging environment to be ready'
-        exit -1
-    fi
-    echo "Staging environment not ready, wait 10 seconds..."
-    sleep 10
-done
-"""
+        // verify the deployment through the corresponding test endpoint
+        verifyEnvironment("tomcat-test-${newEnvironment()}", expectedTomcatVersion())
     }
 
     stage('Switch') {
+        // Update the production service endpoint to route to the new environment.
+        // With enableConfigSubstitution set to true, the variables ${TARGET_ROLE}, ${TOMCAT_VERSION} 
+        // will be replaced with environment variable values
         acsDeploy azureCredentialsId: 'sp',
-                  configFilePaths: "k8s/service-${newEnvironment()}.yml",
+                  configFilePaths: "k8s/service.yml",
                   containerService: "$aks | AKS",
-                  resourceGroupName: resourceGroup
+                  resourceGroupName: resourceGroup,
+                  enableConfigSubstitution: true
     }
 
     stage('Verify Prod') {
-        sh """
-count=0
-while true; do
-    count=\$(expr \$count + 1)
-    prod_ip=\$(kubectl --kubeconfig=kubeconfig get services --selector='app=tomcat,env=prod' --output json | jq -r '.items[0].status.loadBalancer.ingress[0].ip')
-    if [ "\$prod_ip" != null ]; then
-        echo 'Production Server IP: \$prod_ip'
-        break
-    fi
-    if [ "\$count" -gt 30 ]; then
-        echo 'Timeout while waiting for the production server IP'
-        exit -1
-    fi
-    echo "Production server IP not ready, sleep 10 seconds..."
-    sleep 10
-done
-count=0
-while true; do
-    count=\$(expr \$count + 1)
-    if curl "http://\$prod_ip" | grep -o "Apache Tomcat/${expectedTomcatVersion()}"; then
-        break;
-    fi
-    if [ "\$count" -gt 30 ]; then
-        echo 'Timeout while waiting for the prod environment to be ready'
-        exit -1
-    fi
-    echo "Prod environment not ready, wait 10 seconds..."
-    sleep 10
-done
-rm -f kubeconfig
-"""
+        // verify the production environment is working properly
+        verifyEnvironment('tomcat-service', expectedTomcatVersion())
+    }
+
+    stage('Post-clean') {
+        sh '''
+          rm -f kubeconfig
+        '''
     }
 }
 ]]></script>

@@ -161,6 +161,8 @@ job_xml=${job_xml//'{insert-job-display-name}'/${job_display_name}}
 job_xml=${job_xml//'{insert-job-description}'/${job_description}}
 job_xml=${job_xml//'{insert-aks-resource-group}'/${aks_resource_group}}
 job_xml=${job_xml//'{insert-aks-name}'/${aks_name}}
+job_xml=${job_xml//'{insert-artifacts-location}'/${artifacts_location}}
+job_xml=${job_xml//'{insert-sas-token}'/${artifacts_location_sas_token}}
 
 #prepare sp-credentials.xml
 sp_credentials_xml=${sp_credentials_xml//'{insert-sp-credentials-id}'/${sp_credentials_id}}

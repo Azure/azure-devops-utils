@@ -1,0 +1,17 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: tomcat-service
+  labels:
+    app: tomcat
+    role: ${TARGET_ROLE}
+    version: ${TOMCAT_VERSION}
+    env: prod
+spec:
+  type: LoadBalancer
+  selector:
+    app: tomcat
+    role: ${TARGET_ROLE}
+  ports:
+    - port: 80
+      targetPort: 8080

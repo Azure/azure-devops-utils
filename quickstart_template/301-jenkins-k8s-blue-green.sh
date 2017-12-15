@@ -133,7 +133,15 @@ run_util_script "jenkins/install_jenkins.sh" \
   --artifacts_location "${artifacts_location}" \
   --sas_token "${artifacts_location_sas_token}"
 
-run_util_script "jenkins/run-cli-command.sh" -c "install-plugin ssh-agent -deploy"
+run_util_script "jenkins/blue-green/bootstrap-k8s-blue-green.sh" \
+    --resource_group "$resource_group" \
+    --aks_name "$aks_name" \
+    --sp_subscription_id "$subscription_id" \
+    --sp_client_id "$app_id" \
+    --sp_client_password "$app_key" \
+    --sp_tenant_id "$tenant_id" \
+    --artifacts_location "$artifacts_location" \
+    --sas_token "$artifacts_location_sas_token"
 
 run_util_script "jenkins/blue-green/add-blue-green-job.sh" \
     -j "http://localhost:8080/" \
