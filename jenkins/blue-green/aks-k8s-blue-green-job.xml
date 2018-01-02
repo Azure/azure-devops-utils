@@ -1,0 +1,162 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.15">
+  <actions />
+  <description>{insert-job-description}</description>
+  <displayName>{insert-job-display-name}</displayName>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.ChoiceParameterDefinition>
+          <name>TOMCAT_VERSION</name>
+          <description>The Tomcat version that will be deployed and activated.</description>
+          <choices class="java.util.Arrays$ArrayList">
+            <a class="string-array">
+              <string>7-jre8</string>
+              <string>8-jre8</string>
+              <string>9-jre8</string>
+            </a>
+          </choices>
+        </hudson.model.ChoiceParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+    <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+      <triggers/>
+    </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.41">
+    <script><![CDATA[
+node {
+    def resourceGroup = '{insert-aks-resource-group}'
+    def aks = '{insert-aks-name}'
+    def artifactsLocation = '{insert-artifacts-location}'
+    def sasToken = '{insert-sas-token}'
+
+    def currentEnvironment = 'blue'
+    def newEnvironment = { ->
+        currentEnvironment == 'blue' ? 'green' : 'blue'
+    }
+    def expectedTomcatVersion = { ->
+        def match = (env.TOMCAT_VERSION =~ /\d+/)
+        match[0]
+    }
+
+    stage('Pre-clean') {
+        cleanWs()
+    }
+
+    stage('SCM') {
+        // We use scripts to fetch the Kubernetes configurations here.
+        // In real world projects, this is likely to be done using source code management tool like git.
+        sh """
+          curl --silent "${artifactsLocation}jenkins/blue-green/fetch-k8s-deployment-config.sh" | bash -s -- --artifacts_location "${artifactsLocation}" --sas_token "${sasToken}" --directory k8s
+          test -e k8s/service.yml
+          test -e k8s/deployment.yml
+        """
+    }
+
+    stage('Prepare Image') {
+        // Genarally, you need to build a docker image with the latest project artifacts, and push it to a docker repository.
+        // Here we use the public tomcat library images for demonstration, and do simple existence verification.
+
+        sh """
+          image_id="\$(curl -s "https://hub.docker.com/v2/repositories/library/tomcat/tags/${env.TOMCAT_VERSION}/" | jq .id)"
+          if [ "\$image_id" = null ]; then
+              echo "Tomcat version '${env.TOMCAT_VERSION}' was not found in Docker Hub" >&2
+              exit 1
+          fi
+        """
+    }
+
+    stage('Check Env') {
+        // check the current active environment to determine the inactive one that will be deployed to
+
+        withCredentials([azureServicePrincipal('sp')]) {
+            // fetch the current service configuration
+            sh """
+              az login --service-principal -u "\$AZURE_CLIENT_ID" -p "\$AZURE_CLIENT_SECRET" -t "\$AZURE_TENANT_ID"
+              az account set --subscription "\$AZURE_SUBSCRIPTION_ID"
+              az aks get-credentials --resource-group "${resourceGroup}" --name "${aks}" --admin --file kubeconfig
+              az logout
+              current_role="\$(kubectl --kubeconfig kubeconfig get services tomcat-service --output json | jq -r .spec.selector.role)"
+              if [ "\$current_role" = null ]; then
+                  echo "Unable to determine current environment"
+                  exit 1
+              fi
+              echo "\$current_role" >current-environment
+            """
+        }
+
+        // parse the current active backend
+        currentEnvironment = readFile('current-environment').trim()
+
+        // set the build name
+        echo "***************************  CURRENT: $currentEnvironment     NEW: ${newEnvironment()}  *****************************"
+        currentBuild.displayName = newEnvironment().toUpperCase() + ' ' + env.TOMCAT_VERSION
+
+        env.TARGET_ROLE = newEnvironment()
+    }
+
+    stage('Deploy') {
+        // Apply the deployments to AKS.
+        // With enableConfigSubstitution set to true, the variables ${TARGET_ROLE}, ${TOMCAT_VERSION} 
+        // will be replaced with environment variable values
+        acsDeploy azureCredentialsId: 'sp',
+                  configFilePaths: "k8s/deployment.yml",
+                  containerService: "$aks | AKS",
+                  resourceGroupName: resourceGroup,
+                  enableConfigSubstitution: true
+    }
+
+    def verifyEnvironment = { service, version ->
+        sh """
+          endpoint_ip="\$(kubectl --kubeconfig=kubeconfig get services '${service}' --output json | jq -r '.status.loadBalancer.ingress[0].ip')"
+          count=0
+          while true; do
+              count=\$(expr \$count + 1)
+              if curl -m 10 "http://\$endpoint_ip" | grep -o "Apache Tomcat/${version}"; then
+                  break;
+              fi
+              if [ "\$count" -gt 30 ]; then
+                  echo 'Timeout while waiting for the ${service} endpoint to be ready'
+                  exit 1
+              fi
+              echo "${service} endpoint is not ready, wait 10 seconds..."
+              sleep 10
+          done
+        """
+    }
+
+    stage('Verify Staged') {
+        // verify the deployment through the corresponding test endpoint
+        verifyEnvironment("tomcat-test-${newEnvironment()}", expectedTomcatVersion())
+    }
+
+    stage('Switch') {
+        // Update the production service endpoint to route to the new environment.
+        // With enableConfigSubstitution set to true, the variables ${TARGET_ROLE}, ${TOMCAT_VERSION} 
+        // will be replaced with environment variable values
+        acsDeploy azureCredentialsId: 'sp',
+                  configFilePaths: "k8s/service.yml",
+                  containerService: "$aks | AKS",
+                  resourceGroupName: resourceGroup,
+                  enableConfigSubstitution: true
+    }
+
+    stage('Verify Prod') {
+        // verify the production environment is working properly
+        verifyEnvironment('tomcat-service', expectedTomcatVersion())
+    }
+
+    stage('Post-clean') {
+        sh '''
+          rm -f kubeconfig
+        '''
+    }
+}
+]]></script>
+    <sandbox>true</sandbox>
+  </definition>
+  <triggers/>
+  <disabled>false</disabled>
+</flow-definition>
