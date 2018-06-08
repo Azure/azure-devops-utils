@@ -252,8 +252,8 @@ fi
 
 sudo add-apt-repository ppa:openjdk-r/ppa --yes
 
-echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/azure-cli/ wheezy main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
-sudo apt-key adv --keyserver packages.microsoft.com --recv-keys 417A0893
+echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
+wget -q -O - https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
 sudo apt-get install apt-transport-https
 sudo apt-get update --yes
 
@@ -450,9 +450,6 @@ elif [ "${cloud_agents}" == 'aci' ]; then
   echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
 fi
 
-run_util_script "jenkins/run-cli-command.sh" -c "reload-configuration"
-
-
 #install nginx
 sudo apt-get install nginx --yes
 
@@ -467,6 +464,17 @@ run_util_script "jenkins/jenkins-on-azure/install-web-page.sh" -u "${jenkins_fqd
 
 #restart nginx
 sudo service nginx restart
+
+# Restart Jenkins
+#
+# As of Jenkins 2.107.3, reload-configuration is not sufficient to instruct Jenkins to pick up all the configuration
+# updates gracefully. Jenkins will be trapped in the blank SetupWizard mode after initial user setup, and the user
+# cannot proceed their work on the Jenkins instance.
+#
+# A restart will do the full reloading.
+sudo service jenkins restart
+# Wait until Jenkins is fully startup and functioning.
+retry_until_successful run_util_script "jenkins/run-cli-command.sh" -c "version"
 
 #install common tools
 sudo apt-get install git --yes
