@@ -16,7 +16,6 @@ Arguments
   --vault_name|-vn                       [Required]: Vault used to store default Username/Password for deployed VMSS
   --storage_account_name|-san            [Required]: Storage account name used for front50
   --storage_account_key|-sak             [Required]: Storage account key used for front50
-  --packer_storage_account|-psa          [Required]: Storage account name used for baked images
   --vm_fqdn|-vf                          [Required]: FQDN for the Jenkins instance hosting the Aptly repository
   --region|-r                                      : Region for VMSS created by Spinnaker, defaulted to westus
   --artifacts_location|-al                         : Url used to reference other scripts/artifacts.
@@ -50,7 +49,7 @@ region="westus"
 repository_name="hello-karyon-rxnetty"
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
 artifacts_location_sas_token=""
-front50_port="8081"
+front50_port="8080"
 
 while [[ $# > 0 ]]
 do
@@ -77,8 +76,6 @@ do
       storage_account_name="$1";;
     --storage_account_key|-sak)
       storage_account_key="$1";;
-    --packer_storage_account|-psa)
-      packer_storage_account="$1";;
     --region|-r)
       region="$1";;
     --vm_fqdn|-vf)
@@ -107,14 +104,12 @@ throw_if_empty resource_group $resource_group
 throw_if_empty vault_name $vault_name
 throw_if_empty storage_account_name $storage_account_name
 throw_if_empty storage_account_key $storage_account_key
-throw_if_empty packer_storage_account $packer_storage_account
 throw_if_empty vm_fqdn $vm_fqdn
 throw_if_empty region $region
 
 default_hal_config="/home/$jenkins_username/.hal/default"
 
 run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$jenkins_username"
-
 # Change front50 port so it doesn't conflict with Jenkins
 front50_settings="$default_hal_config/service-settings/front50.yml"
 sudo -u $jenkins_username mkdir -p $(dirname "$front50_settings")
@@ -129,8 +124,15 @@ echo "$app_key" | hal config provider azure account add my-azure-account \
   --default-key-vault "$vault_name" \
   --default-resource-group "$resource_group" \
   --packer-resource-group "$resource_group" \
-  --packer-storage-account "$packer_storage_account" \
   --app-key
+
+#change region if region not in eastus or westus
+if [ "$region" != eastus ] && [ "$region" != westus ]; then
+hal config provider azure account edit my-azure-account \
+  --regions "eastus","westus","$region" 
+else
+echo "donot need change" 
+fi
 hal config provider azure enable
 
 # Configure Rosco (these params are not supported by Halyard yet)
@@ -144,7 +146,7 @@ EOF
 
 # Configure Jenkins for Spinnaker
 echo "$jenkins_password" | hal config ci jenkins master add Jenkins \
-    --address "http://localhost:8080" \
+    --address "http://localhost:8082" \
     --username "$jenkins_username" \
     --password
 hal config ci jenkins enable
@@ -162,6 +164,17 @@ echo "Setting up initial user..."
 echo "jenkins.model.Jenkins.instance.securityRealm.createAccount(\"$jenkins_username\", \"$jenkins_password\")"  > addUser.groovy
 run_util_script "jenkins/run-cli-command.sh" -cif "addUser.groovy" -c "groovy ="
 rm "addUser.groovy"
+
+#Change the Jenkins port so it doesn’t conflict with the Spinnaker front50 port
+port=8082
+sed -i -e "s/\(HTTP_PORT=\).*/\1$port/"  /etc/default/jenkins
+service jenkins restart
+
+#service may failed to start for redis issue 
+sudo redis-server /etc/redis/redis.conf
+sudo systemctl restart orca.service
+sudo systemctl restart front50.service
+sudo systemctl restart gate.service
 
 # Wait for Spinnaker services to be up before returning
 timeout=180
