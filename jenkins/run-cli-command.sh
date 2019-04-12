@@ -92,7 +92,7 @@ function retry_until_successful_with_input {
     else
         let counter++
     fi
-    sleep 5
+    sleep 50
     cat "$input_file" | "${@}"
   done;
 }
