@@ -76,7 +76,7 @@ function retry_until_successful {
     else
         let counter++
     fi
-    sleep 5
+    sleep 50
     "${@}"
   done;
 }
