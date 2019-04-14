@@ -48,7 +48,7 @@ function run_util_script() {
 # Set defaults
 region="westus"
 repository_name="hello-karyon-rxnetty"
-artifacts_location="https://github.com/onlyloveyouever/azure-devops-utils/blob/master/"
+artifacts_location="https://raw.githubusercontent.com/onlyloveyouever/azure-devops-utils/master/"
 artifacts_location_sas_token=""
 front50_port="8081"
 
