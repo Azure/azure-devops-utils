@@ -152,8 +152,6 @@ hal config ci jenkins enable
 # Deploy Spinnaker to local VM
 sudo hal deploy apply
 
-run_util_script "jenkins/install_jenkins.sh" -jf "${vm_fqdn}" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
-
 run_util_script "jenkins/init-aptly-repo.sh" -vf "${vm_fqdn}" -rn "${repository_name}"
 
 run_util_script "jenkins/add-aptly-build-job.sh" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
