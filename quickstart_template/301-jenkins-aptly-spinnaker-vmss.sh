@@ -51,7 +51,7 @@ repository_name="hello-karyon-rxnetty"
 artifacts_location="https://raw.githubusercontent.com/onlyloveyouever/azure-devops-utils/master/"
 artifacts_location_sas_token=""
 front50_port="8081"
-
+export DEBIAN_FRONTEND=noninteractive
 while [[ $# > 0 ]]
 do
   key="$1"
