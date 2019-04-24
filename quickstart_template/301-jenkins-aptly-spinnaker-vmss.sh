@@ -51,7 +51,13 @@ repository_name="hello-karyon-rxnetty"
 artifacts_location="https://raw.githubusercontent.com/onlyloveyouever/azure-devops-utils/master/"
 artifacts_location_sas_token=""
 front50_port="8081"
-export DEBIAN_FRONTEND=noninteractive
+export LANGUAGE=en_US.UTF-8
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+locale-gen en_US.UTF-8
+dpkg-reconfigure locales
+
+
 while [[ $# > 0 ]]
 do
   key="$1"
