@@ -50,7 +50,7 @@ throw_if_empty repository_name $repository_name
 echo "deb http://repo.aptly.info/ squeeze main" | sudo tee -a "/etc/apt/sources.list" > /dev/null
 sudo apt-key adv --keyserver keys.gnupg.net --recv-keys 9E3E53F19C7DE460
 sudo DEBIAN_FRONTEND=noninteractive apt-get update --yes
-sudo DEBIAN_FRONTEND=noninteractive apt-get install aptly --yes
+sudo DEBIAN_FRONTEND=noninteractive apt-get install aptly --force-yes --yes
 
 # Create default aptly repository
 sudo su -c "aptly repo create $repository_name" jenkins
