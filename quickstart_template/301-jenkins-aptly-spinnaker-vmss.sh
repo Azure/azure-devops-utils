@@ -120,6 +120,12 @@ throw_if_empty region $region
 default_hal_config="/home/$jenkins_username/.hal/default"
 
 run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$jenkins_username"
+# Change front50 port so it doesn't conflict with Jenkins
+front50_settings="$default_hal_config/service-settings/front50.yml"
+sudo -u $jenkins_username mkdir -p $(dirname "$front50_settings")
+sudo -u $jenkins_username touch "$front50_settings"
+echo "port: $front50_port" > "$front50_settings"
+
 
 
 # Configure Azure provider for Spinnaker
