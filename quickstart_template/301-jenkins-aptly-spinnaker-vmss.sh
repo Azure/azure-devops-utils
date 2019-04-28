@@ -121,11 +121,6 @@ default_hal_config="/home/$jenkins_username/.hal/default"
 
 run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$jenkins_username"
 
-# Change front50 port so it doesn't conflict with Jenkins
-front50_settings="$default_hal_config/service-settings/front50.yml"
-sudo -u $jenkins_username mkdir -p $(dirname "$front50_settings")
-sudo -u $jenkins_username touch "$front50_settings"
-echo "port: $front50_port" > "$front50_settings"
 
 # Configure Azure provider for Spinnaker
 echo "$app_key" | hal config provider azure account add my-azure-account \
@@ -168,7 +163,10 @@ echo "Setting up initial user..."
 echo "jenkins.model.Jenkins.instance.securityRealm.createAccount(\"$jenkins_username\", \"$jenkins_password\")"  > addUser.groovy
 run_util_script "jenkins/run-cli-command.sh" -cif "addUser.groovy" -c "groovy ="
 rm "addUser.groovy"
-
+#change jenkins port 
+port=8082
+sed -i -e "s/\(HTTP_PORT=\).*/\1$port/"  /etc/default/jenkins
+service jenkins restart
 # Wait for Spinnaker services to be up before returning
 timeout=180
 echo "while !(nc -z localhost 8084) || !(nc -z localhost 9000); do sleep 1; done" | timeout $timeout bash
