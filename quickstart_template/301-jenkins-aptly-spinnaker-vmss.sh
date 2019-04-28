@@ -173,6 +173,7 @@ rm "addUser.groovy"
 port=8082
 sed -i -e "s/\(HTTP_PORT=\).*/\1$port/"  /etc/default/jenkins
 service jenkins restart
+hal deploy apply
 # Wait for Spinnaker services to be up before returning
 timeout=180
 echo "while !(nc -z localhost 8084) || !(nc -z localhost 9000); do sleep 1; done" | timeout $timeout bash
