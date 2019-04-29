@@ -156,7 +156,8 @@ echo "$jenkins_password" | hal config ci jenkins master add Jenkins \
     --password
 hal config ci jenkins enable
 
-
+# Deploy Spinnaker to local VM
+sudo hal deploy apply
 
 run_util_script "jenkins/install_jenkins.sh" -jf "${vm_fqdn}" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
 
