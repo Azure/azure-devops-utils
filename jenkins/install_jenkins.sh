@@ -306,8 +306,6 @@ final_jenkins_config=${inter_jenkins_config//'{slave-agent-port}'/${jenkins_agen
 echo "${final_jenkins_config}" | sudo tee /var/lib/jenkins/config.xml > /dev/null
 
 #restart jenkins
-port=8082
-sed -i -e "s/\(HTTP_PORT=\).*/\1$port/"  /etc/default/jenkins
 sudo service jenkins restart
 
 #install the service principal
