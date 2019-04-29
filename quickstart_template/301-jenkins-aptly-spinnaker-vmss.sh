@@ -169,10 +169,15 @@ echo "Setting up initial user..."
 echo "jenkins.model.Jenkins.instance.securityRealm.createAccount(\"$jenkins_username\", \"$jenkins_password\")"  > addUser.groovy
 run_util_script "jenkins/run-cli-command.sh" -cif "addUser.groovy" -c "groovy ="
 rm "addUser.groovy"
+
 #change jenkins port 
 port=8082
 sed -i -e "s/\(HTTP_PORT=\).*/\1$port/"  /etc/default/jenkins
 service jenkins restart
+
+# Deploy Spinnaker to local VM
+sudo hal deploy apply
+
 # Wait for Spinnaker services to be up before returning
 timeout=180
 echo "while !(nc -z localhost 8084) || !(nc -z localhost 9000); do sleep 1; done" | timeout $timeout bash
