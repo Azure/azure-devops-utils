@@ -472,6 +472,8 @@ sudo service nginx restart
 # cannot proceed their work on the Jenkins instance.
 #
 # A restart will do the full reloading.
+port=8082
+sed -i -e "s/\(HTTP_PORT=\).*/\1$port/" /etc/default/jenkins
 sudo service jenkins restart
 # Wait until Jenkins is fully startup and functioning.
 retry_until_successful run_util_script "jenkins/run-cli-command.sh" -c "version"
