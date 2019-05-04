@@ -175,6 +175,8 @@ port=8082
 sed -i -e "s/\(HTTP_PORT=\).*/\1$port/"  /etc/default/jenkins
 service jenkins restart
 
+# Deploy Spinnaker to local VM
+sudo hal deploy apply
 
 
 # Wait for Spinnaker services to be up before returning
