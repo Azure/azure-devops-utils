@@ -175,8 +175,6 @@ port=8082
 sed -i -e "s/\(HTTP_PORT=\).*/\1$port/"  /etc/default/jenkins
 service jenkins restart
 
-# Deploy Spinnaker to local VM
-sudo hal deploy apply
 #!/bin/bash
 orcaservice_status=`systemctl --state=failed | grep "orca.service"`
 orcaservice_errormessage=`journalctl -u orca.service | grep "JedisConnectionException"`
