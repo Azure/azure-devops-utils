@@ -47,7 +47,7 @@ throw_if_empty storage_account_key $storage_account_key
 throw_if_empty username $username
 
 # Install Halyard
-curl -O https://raw.githubusercontent.com/spinnaker/halyard/master/install/debian/InstallHalyard.sh
+curl --silent "https://raw.githubusercontent.com/spinnaker/halyard/master/install/debian/InstallHalyard.sh" | sudo bash -s -- --user "$username" -y
 
 # Set Halyard to use the latest released/validated version of Spinnaker
 hal config version edit --version $(hal version latest -q)
