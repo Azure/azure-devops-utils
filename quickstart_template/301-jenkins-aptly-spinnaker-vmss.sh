@@ -16,7 +16,6 @@ Arguments
   --vault_name|-vn                       [Required]: Vault used to store default Username/Password for deployed VMSS
   --storage_account_name|-san            [Required]: Storage account name used for front50
   --storage_account_key|-sak             [Required]: Storage account key used for front50
-  --packer_storage_account|-psa          [Required]: Storage account name used for baked images
   --vm_fqdn|-vf                          [Required]: FQDN for the Jenkins instance hosting the Aptly repository
   --region|-r                                      : Region for VMSS created by Spinnaker, defaulted to westus
   --artifacts_location|-al                         : Url used to reference other scripts/artifacts.
@@ -83,8 +82,6 @@ do
       storage_account_name="$1";;
     --storage_account_key|-sak)
       storage_account_key="$1";;
-    --packer_storage_account|-psa)
-      packer_storage_account="$1";;
     --region|-r)
       region="$1";;
     --vm_fqdn|-vf)
@@ -113,7 +110,6 @@ throw_if_empty resource_group $resource_group
 throw_if_empty vault_name $vault_name
 throw_if_empty storage_account_name $storage_account_name
 throw_if_empty storage_account_key $storage_account_key
-throw_if_empty packer_storage_account $packer_storage_account
 throw_if_empty vm_fqdn $vm_fqdn
 throw_if_empty region $region
 
@@ -136,7 +132,6 @@ echo "$app_key" | hal config provider azure account add my-azure-account \
   --default-key-vault "$vault_name" \
   --default-resource-group "$resource_group" \
   --packer-resource-group "$resource_group" \
-  --packer-storage-account "$packer_storage_account" \
   --app-key
 hal config provider azure enable
 
