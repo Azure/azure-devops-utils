@@ -175,7 +175,7 @@ port=8082
 sed -i -e "s/\(HTTP_PORT=\).*/\1$port/"  /etc/default/jenkins
 service jenkins restart
 
-#restart service
+#restart service because sometimes donot ok 
 systemctl restart orca.service
 systemctl restart front50.service
 systemctl restart gate.service
