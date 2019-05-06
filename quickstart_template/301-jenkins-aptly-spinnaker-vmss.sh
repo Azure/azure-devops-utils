@@ -175,20 +175,11 @@ port=8082
 sed -i -e "s/\(HTTP_PORT=\).*/\1$port/"  /etc/default/jenkins
 service jenkins restart
 
-#!/bin/bash
-orcaservice_status=`systemctl --state=failed | grep "orca.service"`
-orcaservice_errormessage=`journalctl -u orca.service | grep "JedisConnectionException"`
-if [[ $orcaservice_status =~ "orca.service" ]] && [[ $orcaservice_errormessage =~ "JedisConnectionException" ]]
-then 
-    echo "Orca service failed to start for redis issue. Trying to start redis and orca service now."
-    sudo redis-server /etc/redis/redis.conf
-    systemctl restart orca.service
-else 
-    echo "Orca service is started successfully."
-fi
-
+#restart service
+systemctl restart orca.service
 systemctl restart front50.service
 systemctl restart gate.service
+
 # Wait for Spinnaker services to be up before returning
 timeout=180
 echo "while !(nc -z localhost 8084) || !(nc -z localhost 9000); do sleep 1; done" | timeout $timeout bash
