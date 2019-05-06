@@ -170,7 +170,7 @@ echo "jenkins.model.Jenkins.instance.securityRealm.createAccount(\"$jenkins_user
 run_util_script "jenkins/run-cli-command.sh" -cif "addUser.groovy" -c "groovy ="
 rm "addUser.groovy"
 
-#change jenkins port 
+#Change the Jenkins port so it doesn’t conflict with the Spinnaker front50 port
 port=8082
 sed -i -e "s/\(HTTP_PORT=\).*/\1$port/"  /etc/default/jenkins
 service jenkins restart
