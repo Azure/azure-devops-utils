@@ -176,9 +176,9 @@ sed -i -e "s/\(HTTP_PORT=\).*/\1$port/"  /etc/default/jenkins
 service jenkins restart
 
 #restart service because sometimes donot ok 
-systemctl restart orca.service
-systemctl restart front50.service
-systemctl restart gate.service
+sudo systemctl restart orca.service
+sudo systemctl restart front50.service
+sudo systemctl restart gate.service
 
 # Wait for Spinnaker services to be up before returning
 timeout=180
