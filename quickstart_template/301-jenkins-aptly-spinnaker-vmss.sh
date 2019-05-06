@@ -186,6 +186,9 @@ then
 else 
     echo "Orca service is started successfully."
 fi
+
+systemctl restart front50.service
+systemctl restart gate.service
 # Wait for Spinnaker services to be up before returning
 timeout=180
 echo "while !(nc -z localhost 8084) || !(nc -z localhost 9000); do sleep 1; done" | timeout $timeout bash
