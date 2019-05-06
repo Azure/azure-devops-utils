@@ -175,7 +175,8 @@ port=8082
 sed -i -e "s/\(HTTP_PORT=\).*/\1$port/"  /etc/default/jenkins
 service jenkins restart
 
-#restart service because sometimes donot ok 
+#service may failed to start for redis issue 
+sudo redis-server /etc/redis/redis.conf
 sudo systemctl restart orca.service
 sudo systemctl restart front50.service
 sudo systemctl restart gate.service
