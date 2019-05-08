@@ -16,6 +16,7 @@ Arguments
   --vault_name|-vn                       [Required]: Vault used to store default Username/Password for deployed VMSS
   --storage_account_name|-san            [Required]: Storage account name used for front50
   --storage_account_key|-sak             [Required]: Storage account key used for front50
+  --packer_storage_account|-psa          [Required]: Storage account name used for baked images
   --vm_fqdn|-vf                          [Required]: FQDN for the Jenkins instance hosting the Aptly repository
   --region|-r                                      : Region for VMSS created by Spinnaker, defaulted to westus
   --artifacts_location|-al                         : Url used to reference other scripts/artifacts.
@@ -82,6 +83,8 @@ do
       storage_account_name="$1";;
     --storage_account_key|-sak)
       storage_account_key="$1";;
+    --packer_storage_account|-psa)
+      packer_storage_account="$1";;
     --region|-r)
       region="$1";;
     --vm_fqdn|-vf)
@@ -110,6 +113,7 @@ throw_if_empty resource_group $resource_group
 throw_if_empty vault_name $vault_name
 throw_if_empty storage_account_name $storage_account_name
 throw_if_empty storage_account_key $storage_account_key
+throw_if_empty packer_storage_account $packer_storage_account
 throw_if_empty vm_fqdn $vm_fqdn
 throw_if_empty region $region
 
@@ -132,6 +136,7 @@ echo "$app_key" | hal config provider azure account add my-azure-account \
   --default-key-vault "$vault_name" \
   --default-resource-group "$resource_group" \
   --packer-resource-group "$resource_group" \
+  --packer-storage-account "$packer_storage_account" \
   --app-key
 hal config provider azure enable
 
@@ -165,17 +170,24 @@ echo "jenkins.model.Jenkins.instance.securityRealm.createAccount(\"$jenkins_user
 run_util_script "jenkins/run-cli-command.sh" -cif "addUser.groovy" -c "groovy ="
 rm "addUser.groovy"
 
-#Change the Jenkins port so it doesn’t conflict with the Spinnaker front50 port
+#change jenkins port 
 port=8082
 sed -i -e "s/\(HTTP_PORT=\).*/\1$port/"  /etc/default/jenkins
 service jenkins restart
 
-#service may failed to start for redis issue 
-sudo redis-server /etc/redis/redis.conf
-sudo systemctl restart orca.service
-sudo systemctl restart front50.service
-sudo systemctl restart gate.service
-
+# Deploy Spinnaker to local VM
+sudo hal deploy apply
+#!/bin/bash
+orcaservice_status=`systemctl --state=failed | grep "orca.service"`
+orcaservice_errormessage=`journalctl -u orca.service | grep "JedisConnectionException"`
+if [[ $orcaservice_status =~ "orca.service" ]] && [[ $orcaservice_errormessage =~ "JedisConnectionException" ]]
+then 
+    echo "Orca service failed to start for redis issue. Trying to start redis and orca service now."
+    sudo redis-server /etc/redis/redis.conf
+    systemctl restart orca.service
+else 
+    echo "Orca service is started successfully."
+fi
 # Wait for Spinnaker services to be up before returning
 timeout=180
 echo "while !(nc -z localhost 8084) || !(nc -z localhost 9000); do sleep 1; done" | timeout $timeout bash
