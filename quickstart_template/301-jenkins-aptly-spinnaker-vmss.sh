@@ -146,7 +146,7 @@ EOF
 
 # Configure Jenkins for Spinnaker
 echo "$jenkins_password" | hal config ci jenkins master add Jenkins \
-    --address "http://localhost:8080" \
+    --address "http://localhost:8082" \
     --username "$jenkins_username" \
     --password
 hal config ci jenkins enable
