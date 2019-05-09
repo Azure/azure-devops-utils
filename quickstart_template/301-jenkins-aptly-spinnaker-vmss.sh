@@ -132,8 +132,16 @@ echo "$app_key" | hal config provider azure account add my-azure-account \
   --default-key-vault "$vault_name" \
   --default-resource-group "$resource_group" \
   --packer-resource-group "$resource_group" \
-  --regions "eastasia","$region" \
   --app-key
+hal config provider azure enable
+
+#change region if region not in eastus or westus
+if [ "$region" != eastus ] && [ "$region" != westus ]; then
+hal config provider azure account edit my-azure-account \
+  --regions "eastus","westus","$region" \
+else
+echo "donot need change" 
+fi
 hal config provider azure enable
 
 # Configure Rosco (these params are not supported by Halyard yet)
