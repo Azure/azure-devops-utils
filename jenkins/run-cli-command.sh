@@ -76,7 +76,7 @@ function retry_until_successful {
     else
         let counter++
     fi
-    sleep 50
+    sleep 5
     "${@}"
   done;
 }
@@ -92,7 +92,7 @@ function retry_until_successful_with_input {
     else
         let counter++
     fi
-    sleep 50
+    sleep 5
     cat "$input_file" | "${@}"
   done;
 }
