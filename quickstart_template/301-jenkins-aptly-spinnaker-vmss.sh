@@ -138,7 +138,7 @@ hal config provider azure enable
 #change region if region not in eastus or westus
 if [ "$region" != eastus ] && [ "$region" != westus ]; then
 hal config provider azure account edit my-azure-account \
-  --regions "eastus","westus","$region" \
+  --regions "eastus","westus","$region" 
 else
 echo "donot need change" 
 fi
