@@ -59,7 +59,7 @@ function retry_until_successful {
 }
 
 #defaults
-artifacts_location="https://raw.githubusercontent.com/onlyloveyouever/azure-devops-utils/master/"
+artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
 jenkins_version_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/jenkins/jenkins-verified-ver"
 azure_web_page_location="/usr/share/nginx/azure"
 jenkins_release_type="LTS"
