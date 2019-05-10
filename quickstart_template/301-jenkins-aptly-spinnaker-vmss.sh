@@ -49,7 +49,6 @@ region="westus"
 repository_name="hello-karyon-rxnetty"
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
 artifacts_location_sas_token=""
-front50_port="8080"
 
 while [[ $# > 0 ]]
 do
@@ -130,8 +129,6 @@ echo "$app_key" | hal config provider azure account add my-azure-account \
 if [ "$region" != eastus ] && [ "$region" != westus ]; then
 hal config provider azure account edit my-azure-account \
   --regions "eastus","westus","$region" 
-else
-echo "donot need change" 
 fi
 hal config provider azure enable
 
@@ -161,20 +158,45 @@ run_util_script "jenkins/init-aptly-repo.sh" -vf "${vm_fqdn}" -rn "${repository_
 run_util_script "jenkins/add-aptly-build-job.sh" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
 
 echo "Setting up initial user..."
-echo "jenkins.model.Jenkins.instance.securityRealm.createAccount(\"$jenkins_username\", \"$jenkins_password\")"  > addUser.groovy
+
+# Using double quote for username and password would fail if contains dollar sign
+echo "jenkins.model.Jenkins.instance.securityRealm.createAccount('$jenkins_username', '$jenkins_password')"  > addUser.groovy
 run_util_script "jenkins/run-cli-command.sh" -cif "addUser.groovy" -c "groovy ="
 rm "addUser.groovy"
 
-#Change the Jenkins port so it doesn’t conflict with the Spinnaker front50 port
+# Change the Jenkins port in order not to conflict with the Spinnaker front50 port
 port=8082
 sed -i -e "s/\(HTTP_PORT=\).*/\1$port/"  /etc/default/jenkins
 service jenkins restart
 
-#service may failed to start for redis issue 
-sudo redis-server /etc/redis/redis.conf
+# If redis is not started, start and wait until port 6379 is available
+netstat -tln | grep ":6379 "
+
+while [ $? -eq 1 ]
+do
+        echo "Redis is not started. Start the redis-server."
+        sudo redis-server /etc/redis/redis.conf
+        sleep 5
+        netstat -tln | grep ":6379 "
+done
+
+netstat -tln | grep ":8083 "
+if [ $? -eq 1 ]
+then
 sudo systemctl restart orca.service
+fi
+
+netstat -tln | grep ":8080 "
+if [ $? -eq 1 ]
+then
 sudo systemctl restart front50.service
+fi
+
+netstat -tln | grep ":8084 "
+if [ $? -eq 1 ]
+then
 sudo systemctl restart gate.service
+fi
 
 # Wait for Spinnaker services to be up before returning
 timeout=180
