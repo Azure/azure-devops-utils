@@ -159,7 +159,7 @@ run_util_script "jenkins/add-aptly-build-job.sh" -al "${artifacts_location}" -st
 
 echo "Setting up initial user..."
 
-# Using double quote for username and password would fail if contains dollar sign
+# Using single quote for username and password here to avoid dollar sign being recognized as start of variable
 echo "jenkins.model.Jenkins.instance.securityRealm.createAccount('$jenkins_username', '$jenkins_password')"  > addUser.groovy
 run_util_script "jenkins/run-cli-command.sh" -cif "addUser.groovy" -c "groovy ="
 rm "addUser.groovy"
@@ -169,16 +169,23 @@ port=8082
 sed -i -e "s/\(HTTP_PORT=\).*/\1$port/"  /etc/default/jenkins
 service jenkins restart
 
-# If redis is not started, start and wait until port 6379 is available
+# If redis is not started, start the redis-server
 netstat -tln | grep ":6379 "
 
-while [ $? -eq 1 ]
-do
+if [ $? -eq 1 ]
+then
         echo "Redis is not started. Start the redis-server."
         sudo redis-server /etc/redis/redis.conf
         sleep 5
-        netstat -tln | grep ":6379 "
-done
+fi
+
+# Double check and log if redis is still not running
+netstat -tln | grep ":6379 "
+
+if [ $? -eq 1 ]
+then
+        echo "Redis failed to start for second time. Related spinnaker micro-services might fail to start."
+fi
 
 netstat -tln | grep ":8083 "
 if [ $? -eq 1 ]
