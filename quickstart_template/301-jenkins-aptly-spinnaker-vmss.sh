@@ -46,6 +46,7 @@ function run_util_script() {
 
 # Set defaults
 region="westus"
+clusterName="aks101cluster"
 repository_name="hello-karyon-rxnetty"
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
 artifacts_location_sas_token=""
@@ -108,6 +109,8 @@ throw_if_empty vm_fqdn $vm_fqdn
 throw_if_empty region $region
 
 default_hal_config="/home/$jenkins_username/.hal/default"
+#save content from aks
+az aks get-credentials --resource-group $resource_group --name $clusterName
 
 run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$jenkins_username"
 # Change front50 port so it doesn't conflict with Jenkins
@@ -116,24 +119,20 @@ sudo -u $jenkins_username mkdir -p $(dirname "$front50_settings")
 sudo -u $jenkins_username touch "$front50_settings"
 echo "port: $front50_port" > "$front50_settings"
 
-# Configure Azure provider for Spinnaker
-echo "$app_key" | hal config provider azure account add my-azure-account \
-  --client-id "$app_id" \
-  --tenant-id "$tenant_id" \
-  --subscription-id "$subscription_id" \
-  --default-key-vault "$vault_name" \
-  --default-resource-group "$resource_group" \
-  --packer-resource-group "$resource_group" \
-  --app-key
+#install kubectl
+curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+sudo mv ./kubectl /usr/local/bin/kubectl
 
-#change region if region not in eastus or westus
-if [ "$region" != eastus ] && [ "$region" != westus ]; then
-hal config provider azure account edit my-azure-account \
-  --regions "eastus","westus","$region" 
-else
-echo "donot need change" 
-fi
-hal config provider azure enable
+# Configure kubernetes provider for Spinnaker
+CONTEXT=$(kubectl config current-context)
+echo "$app_key" | hal config provider kubernetes account add my-k8s-v2-account \
+  --provider-version v2 \
+  --context $CONTEXT
+
+hal config provider kubernetes enable
+hal config features edit --artifacts true
+hal config deploy edit --type distributed --account-name my-k8s-v2-account
 
 # Configure Rosco (these params are not supported by Halyard yet)
 rosco_config="$default_hal_config/profiles/rosco-local.yml"
@@ -154,33 +153,9 @@ hal config ci jenkins enable
 # Deploy Spinnaker to local VM
 sudo hal deploy apply
 
-run_util_script "jenkins/install_jenkins.sh" -jf "${vm_fqdn}" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
-
-run_util_script "jenkins/init-aptly-repo.sh" -vf "${vm_fqdn}" -rn "${repository_name}"
-
-run_util_script "jenkins/add-aptly-build-job.sh" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
-
-echo "Setting up initial user..."
-echo "jenkins.model.Jenkins.instance.securityRealm.createAccount(\"$jenkins_username\", \"$jenkins_password\")"  > addUser.groovy
-run_util_script "jenkins/run-cli-command.sh" -cif "addUser.groovy" -c "groovy ="
-rm "addUser.groovy"
-
-#Change the Jenkins port so it doesn’t conflict with the Spinnaker front50 port
-port=8082
-sed -i -e "s/\(HTTP_PORT=\).*/\1$port/"  /etc/default/jenkins
-service jenkins restart
-
 #service may failed to start for redis issue 
 sudo redis-server /etc/redis/redis.conf
 sudo systemctl restart orca.service
 sudo systemctl restart front50.service
 sudo systemctl restart gate.service
 
-# Wait for Spinnaker services to be up before returning
-timeout=180
-echo "while !(nc -z localhost 8084) || !(nc -z localhost 9000); do sleep 1; done" | timeout $timeout bash
-return_value=$?
-if [ $return_value -ne 0 ]; then
-  >&2 echo "Failed to connect to Spinnaker within '$timeout' seconds."
-  exit $return_value
-fi
