@@ -113,14 +113,9 @@ throw_if_empty region $region
 
 default_hal_config="/home/$jenkins_username/.hal/default"
 #install az cli and get-credentials from aks
-echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ wheezy main" | \
-sudo tee /etc/apt/sources.list.d/azure-cli.list
-sudo apt-key adv --keyserver packages.microsoft.com --recv-keys 52E16F86FEE04B979B07E28DB02C46DF417A0893
-sudo apt-get install apt-transport-https
-sudo apt-get update && sudo apt-get install azure-cli
-
-az login --service-principal -u "$app_id" -p "$app_key" -t "$tenant_id"
-az aks get-credentials --resource-group $resource_group --name $clusterName
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+az login --service-principal -u 591d345d-ce5d-4368-8442-07fbb9d93e26 -p 040b8146-3663-44ba-b6c7-cc724495f977 -t 72f988bf-86f1-41af-91ab-2d7cd011db47
+az aks get-credentials --resource-group testaks --name aks101cluster
 
 run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$jenkins_username"
 # Change front50 port so it doesn't conflict with Jenkins
