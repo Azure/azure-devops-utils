@@ -156,6 +156,7 @@ echo "$jenkins_password" | hal config ci jenkins master add Jenkins \
 hal config ci jenkins enable
 
 # Deploy Spinnaker to local VM
+hal config version edit --version 1.13.8
 sudo hal deploy apply
 
 #service may failed to start for redis issue 
