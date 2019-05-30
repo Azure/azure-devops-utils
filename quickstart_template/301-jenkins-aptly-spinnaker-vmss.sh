@@ -118,11 +118,6 @@ az login --service-principal -u 591d345d-ce5d-4368-8442-07fbb9d93e26 -p 040b8146
 az aks get-credentials --resource-group testaks --name aks101cluster
 
 run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$jenkins_username"
-# Change front50 port so it doesn't conflict with Jenkins
-front50_settings="$default_hal_config/service-settings/front50.yml"
-sudo -u $jenkins_username mkdir -p $(dirname "$front50_settings")
-sudo -u $jenkins_username touch "$front50_settings"
-echo "port: $front50_port" > "$front50_settings"
 
 #install kubectl
 curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
@@ -139,30 +134,10 @@ hal config provider kubernetes enable
 hal config features edit --artifacts true
 hal config deploy edit --type distributed --account-name my-k8s-v2-account
 
-# Configure Rosco (these params are not supported by Halyard yet)
-rosco_config="$default_hal_config/profiles/rosco-local.yml"
-sudo -u $jenkins_username mkdir -p $(dirname "$rosco_config")
-sudo -u $jenkins_username touch "$rosco_config"
-cat <<EOF > "$rosco_config"
-debianRepository: http://ppa.launchpad.net/openjdk-r/ppa/ubuntu trusty main;http://$vm_fqdn:9999 trusty main
-defaultCloudProviderType: azure
-EOF
-
-# Configure Jenkins for Spinnaker
-echo "$jenkins_password" | hal config ci jenkins master add Jenkins \
-    --address "http://localhost:8082" \
-    --username "$jenkins_username" \
-    --password
-hal config ci jenkins enable
-
 # Deploy Spinnaker to local VM
 hal config version edit --version 1.13.8
 sudo hal deploy apply
 hal deploy connect
-#service may failed to start for redis issue 
-sudo redis-server /etc/redis/redis.conf
-sudo systemctl restart orca.service
-sudo systemctl restart front50.service
-sudo systemctl restart gate.service
+
 
 
