@@ -161,3 +161,5 @@ sudo systemctl restart orca.service
 sudo systemctl restart front50.service
 sudo systemctl restart gate.service
 
+az login --service-principal -u $app_id -p $app_key --tenant $tenant_id
+az aks get-credentials --resource-group $resource_group --name $clusterName
