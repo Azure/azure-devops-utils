@@ -158,7 +158,7 @@ hal config ci jenkins enable
 # Deploy Spinnaker to local VM
 hal config version edit --version 1.13.8
 sudo hal deploy apply
-
+hal deploy connect
 #service may failed to start for redis issue 
 sudo redis-server /etc/redis/redis.conf
 sudo systemctl restart orca.service
