@@ -109,7 +109,9 @@ throw_if_empty vm_fqdn $vm_fqdn
 throw_if_empty region $region
 
 default_hal_config="/home/$jenkins_username/.hal/default"
-#save content from aks
+#install az cli and get-credentials from aks
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+az login --service-principal -u $app_id -p $app_key --tenant $tenant_id
 az aks get-credentials --resource-group $resource_group --name $clusterName
 
 run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$jenkins_username"
