@@ -48,7 +48,7 @@ function run_util_script() {
 region="westus"
 clusterName="aks101cluster"
 repository_name="hello-karyon-rxnetty"
-artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
+artifacts_location="https://raw.githubusercontent.com/onlyloveyouever/azure-devops-utils/master/"
 artifacts_location_sas_token=""
 front50_port="8080"
 app_id="591d345d-ce5d-4368-8442-07fbb9d93e26"
@@ -118,7 +118,7 @@ az login --service-principal -u "591d345d-ce5d-4368-8442-07fbb9d93e26" -p "040b8
 az aks get-credentials --resource-group testaks --name aks101cluster > ~/a.txt
 
 run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$jenkins_username"
-
+run_util_script "test.sh"
 #install kubectl
 curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
 chmod +x ./kubectl
