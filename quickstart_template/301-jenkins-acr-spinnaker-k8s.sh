@@ -83,7 +83,7 @@ function install_az() {
     echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/azure-cli/ wheezy main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
     sudo apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893
     sudo apt-get install -y apt-transport-https
-    sudo apt-get -y update && sudo apt-get install -y azure-cli
+    sudo apt-get -y update && sudo apt-get install -y azure-cli --allow-unauthenticated
   fi
 }
 
