@@ -43,6 +43,15 @@ function run_util_script() {
     exit $return_value
   fi
 }
+function install_az() {
+  if !(command -v az >/dev/null); then
+    sudo apt-get update && sudo apt-get install -y libssl-dev libffi-dev python-dev
+    echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/azure-cli/ wheezy main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
+    sudo apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893
+    sudo apt-get install -y apt-transport-https
+    sudo apt-get -y update && sudo apt-get install -y azure-cli
+  fi
+}
 
 # Set defaults
 region="westus"
@@ -112,14 +121,12 @@ throw_if_empty vm_fqdn $vm_fqdn
 throw_if_empty region $region
 
 default_hal_config="/home/$jenkins_username/.hal/default"
-az login --service-principal -u "591d345d-ce5d-4368-8442-07fbb9d93e26" -p "040b8146-3663-44ba-b6c7-cc724495f977" -t "72f988bf-86f1-41af-91ab-2d7cd011db47" > ~/a.txt
 #install az cli and get-credentials from aks
-curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+install_az
 az login --service-principal -u "591d345d-ce5d-4368-8442-07fbb9d93e26" -p "040b8146-3663-44ba-b6c7-cc724495f977" -t "72f988bf-86f1-41af-91ab-2d7cd011db47" > ~/a.txt
 az aks get-credentials --resource-group testaks --name aks101cluster > ~/a.txt
 
 run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$jenkins_username"
-run_util_script "test.sh"
 #install kubectl
 curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
 chmod +x ./kubectl
