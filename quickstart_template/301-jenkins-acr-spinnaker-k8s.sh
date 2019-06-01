@@ -220,8 +220,7 @@ run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_ac
 # Copy kube config
 az login --service-principal -u "$app_id" -p "$app_key" --tenant "$tenant_id"
 az account set --subscription "$subscription_id"
-run_util_script "spinnaker/copy_kube_config/copy_kube_config.sh" -un "$user_name" -rg "$resource_group" -mf "$master_fqdn"
-az logout
+az aks get-credentials --resource-group testaks --name aks101cluster > ~/a.txt
 
 # Configure Spinnaker Docker Registry Accounts
 docker_hub_account="docker-hub-registry"
