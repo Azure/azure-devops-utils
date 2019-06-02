@@ -134,22 +134,6 @@ curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s htt
 chmod +x ./kubectl
 sudo mv ./kubectl /usr/local/bin/kubectl
 
-# Configure Azure provider for Spinnaker
-echo "$app_key" | hal config provider azure account add my-azure-account \
-  --client-id "$app_id" \
-  --tenant-id "$tenant_id" \
-  --subscription-id "$subscription_id" \
-  --default-key-vault "$vault_name" \
-  --default-resource-group "$resource_group" \
-  --packer-resource-group "$resource_group" \
-  --app-key
-
-#change region if region not in eastus or westus
-if [ "$region" != eastus ] && [ "$region" != westus ]; then
-hal config provider azure account edit my-azure-account \
-  --regions "eastus","westus","$region" 
-fi
-hal config provider azure enable
 
 # Configure kubernetes provider for Spinnaker
 CONTEXT=$(kubectl config current-context)
