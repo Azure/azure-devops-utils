@@ -136,10 +136,10 @@ sudo mv ./kubectl /usr/local/bin/kubectl
 
 
 # Configure kubernetes provider for Spinnaker
-CONTEXT=$(kubectl --kubeconfig /home/sdpan/.kube/config current-context)
+
 echo "$app_key" | hal config provider kubernetes account add my-k8s-v2-account \
   --provider-version v2 \
-  --context $CONTEXT
+  --context $clusterName
 
 hal config provider kubernetes enable
 hal config features edit --artifacts true
