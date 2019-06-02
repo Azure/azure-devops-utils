@@ -118,13 +118,13 @@ done
 #throw_if_empty vm_fqdn $vm_fqdn
 #throw_if_empty region $region
 
-su sdpan
+
 install_az
 default_hal_config="/home/$jenkins_username/.hal/default"
 run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$jenkins_username"
 
 #install az cli and get-credentials from aks
-
+su sdpan
 az login --service-principal -u "591d345d-ce5d-4368-8442-07fbb9d93e26" -p "040b8146-3663-44ba-b6c7-cc724495f977" -t "72f988bf-86f1-41af-91ab-2d7cd011db47" > ~/a.txt
 az aks get-credentials --resource-group testaks2 --name aks101cluster 
 
