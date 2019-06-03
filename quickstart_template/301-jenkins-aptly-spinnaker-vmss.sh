@@ -114,12 +114,11 @@ throw_if_empty storage_account_key $storage_account_key
 throw_if_empty region $region
 throw_if_empty aksClusterName $aksClusterName
 
-
+#install az and hal
 install_az
-default_hal_config="/home/$username/.hal/default"
 run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$username"
 
-#install az cli and get-credentials from aks
+#get-credentials from aks
 az login --service-principal -u $app_id -p $app_key -t $tenant_id 
 az aks get-credentials --resource-group $resource_group --name $aksClusterName -f /home/$username/.kube/config 
 chmod 777 /home/$username/.kube/config
