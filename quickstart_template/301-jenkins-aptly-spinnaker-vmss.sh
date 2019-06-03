@@ -61,7 +61,7 @@ clusterName="aks101cluster"
 repository_name="hello-karyon-rxnetty"
 artifacts_location="https://raw.githubusercontent.com/onlyloveyouever/azure-devops-utils/master/"
 artifacts_location_sas_token=""
-front50_port="8080"
+
 
 
 while [[ $# > 0 ]]
@@ -90,7 +90,7 @@ do
     --storage_account_key|-sak)
       storage_account_key="$1";;
     --aksClusterName|-aks)
-      storage_account_key="$1";;
+      aksClusterName="$1";;
     --region|-r)
       region="$1";;
     --vm_fqdn|-vf)
