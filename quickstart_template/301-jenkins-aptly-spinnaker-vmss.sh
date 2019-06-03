@@ -105,18 +105,18 @@ do
   shift
 done
 
-#throw_if_empty app_id $app_id
-#throw_if_empty app_key $app_key
-#throw_if_empty jenkins_username $jenkins_username
-#throw_if_empty jenkins_password $jenkins_password
-#throw_if_empty tenant_id $tenant_id
-#throw_if_empty subscription_id $subscription_id
-#throw_if_empty resource_group $resource_group
-#throw_if_empty vault_name $vault_name
-#throw_if_empty storage_account_name $storage_account_name
-#throw_if_empty storage_account_key $storage_account_key
-#throw_if_empty vm_fqdn $vm_fqdn
-#throw_if_empty region $region
+throw_if_empty app_id $app_id
+throw_if_empty app_key $app_key
+throw_if_empty jenkins_username $jenkins_username
+throw_if_empty jenkins_password $jenkins_password
+throw_if_empty tenant_id $tenant_id
+throw_if_empty subscription_id $subscription_id
+throw_if_empty resource_group $resource_group
+throw_if_empty vault_name $vault_name
+throw_if_empty storage_account_name $storage_account_name
+throw_if_empty storage_account_key $storage_account_key
+throw_if_empty vm_fqdn $vm_fqdn
+throw_if_empty region $region
 
 
 install_az
@@ -134,8 +134,25 @@ chmod +x ./kubectl
 sudo mv ./kubectl /usr/local/bin/kubectl
 
 
-# Configure kubernetes provider for Spinnaker
 
+# Configure Azure provider for Spinnaker
+echo "$app_key" | hal config provider azure account add my-azure-account \
+  --client-id "$app_id" \
+  --tenant-id "$tenant_id" \
+  --subscription-id "$subscription_id" \
+  --default-key-vault "$vault_name" \
+  --default-resource-group "$resource_group" \
+  --packer-resource-group "$resource_group" \
+  --app-key
+
+#change region if region not in eastus or westus
+if [ "$region" != eastus ] && [ "$region" != westus ]; then
+hal config provider azure account edit my-azure-account \
+  --regions "eastus","westus","$region" 
+fi
+hal config provider azure enable
+
+# Configure kubernetes provider for Spinnaker
 echo "$app_key" | hal config provider kubernetes account add my-k8s-v2-account \
   --provider-version v2 \
   --context $clusterName
