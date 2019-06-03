@@ -8,8 +8,8 @@ Command
 Arguments
   --app_id|-ai                           [Required]: Service principal app id used by Spinnaker to dynamically manage resources
   --app_key|-ak                          [Required]: Service principal app key used by Spinnaker to dynamically manage resources
-  --jenkins_username|-ju                 [Required]: Jenkins username
-  --jenkins_password|-jp                 [Required]: Jenkins password
+  --username|-u                          [Required]: vm username
+  --password|-p                          [Required]: vm password
   --tenant_id|-ti                        [Required]: Tenant id
   --subscription_id|-si                  [Required]: Subscription id
   --resource_group|-rg                   [Required]: Resource group containing your key vault and packer storage account
@@ -56,12 +56,8 @@ function install_az() {
 }
 
 # Set defaults
-region="westus"
-repository_name="hello-karyon-rxnetty"
 artifacts_location="https://raw.githubusercontent.com/onlyloveyouever/azure-devops-utils/master/"
 artifacts_location_sas_token=""
-
-
 
 while [[ $# > 0 ]]
 do
@@ -72,10 +68,10 @@ do
       app_id="$1";;
     --app_key|-ak)
       app_key="$1";;
-    --jenkins_username|-ju)
-      jenkins_username="$1";;
-    --jenkins_password|-jp)
-      jenkins_password="$1";;
+    --username|-u)
+      username="$1";;
+    --password|-p)
+      password="$1";;
     --tenant_id|-ti)
       tenant_id="$1";;
     --subscription_id|-si)
@@ -110,8 +106,8 @@ done
 
 throw_if_empty app_id $app_id
 throw_if_empty app_key $app_key
-throw_if_empty jenkins_username $jenkins_username
-throw_if_empty jenkins_password $jenkins_password
+throw_if_empty username $username
+throw_if_empty password $password
 throw_if_empty tenant_id $tenant_id
 throw_if_empty subscription_id $subscription_id
 throw_if_empty resource_group $resource_group
@@ -124,19 +120,18 @@ throw_if_empty aksClusterName $aksClusterName
 
 
 install_az
-default_hal_config="/home/$jenkins_username/.hal/default"
-run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$jenkins_username"
+default_hal_config="/home/$username/.hal/default"
+run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$username"
 
 #install az cli and get-credentials from aks
-az login --service-principal -u $app_id -p $app_key -t $tenant_id > ~/a.txt
-az aks get-credentials --resource-group $resource_group --name $aksClusterName -f /home/$jenkins_username/.kube/config > ~/y.txt
-chmod 777 /home/$jenkins_username/.kube/config
+az login --service-principal -u $app_id -p $app_key -t $tenant_id 
+az aks get-credentials --resource-group $resource_group --name $aksClusterName -f /home/$username/.kube/config 
+chmod 777 /home/$username/.kube/config
 
 #install kubectl
 curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
 chmod +x ./kubectl
 sudo mv ./kubectl /usr/local/bin/kubectl
-
 
 
 # Configure Azure provider for Spinnaker
@@ -161,7 +156,7 @@ echo "$app_key" | hal config provider kubernetes account add my-k8s-v2-account \
   --provider-version v2 \
   --context $aksClusterName
   
-hal config provider kubernetes account edit my-k8s-v2-account --kubeconfig-file /home/$jenkins_username/.kube/config
+hal config provider kubernetes account edit my-k8s-v2-account --kubeconfig-file /home/$username/.kube/config
 
 hal config provider kubernetes enable
 hal config features edit --artifacts true
@@ -170,7 +165,7 @@ hal config deploy edit --type distributed --account-name my-k8s-v2-account
 # Deploy Spinnaker to local VM
 hal config version edit --version 1.13.8
 sudo hal deploy apply
-hal deploy connect > ~/b.txt
+hal deploy connect 
 
 
 
