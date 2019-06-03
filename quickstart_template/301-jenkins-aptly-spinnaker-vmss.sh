@@ -130,7 +130,7 @@ run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_ac
 
 #install az cli and get-credentials from aks
 az login --service-principal -u $app_id -p $app_key -t $tenant_id > ~/a.txt
-az aks get-credentials --resource-group $resource_group --name $clusterName -f /home/$jenkins_username/.kube/config > ~/y.txt
+az aks get-credentials --resource-group $resource_group --name $aksClusterName -f /home/$jenkins_username/.kube/config > ~/y.txt
 chmod 777 /home/$jenkins_username/.kube/config
 
 #install kubectl
@@ -160,7 +160,7 @@ hal config provider azure enable
 # Configure kubernetes provider for Spinnaker
 echo "$app_key" | hal config provider kubernetes account add my-k8s-v2-account \
   --provider-version v2 \
-  --context $clusterName
+  --context $aksClusterName
   
 hal config provider kubernetes account edit my-k8s-v2-account --kubeconfig-file /home/$jenkins_username/.kube/config
 
