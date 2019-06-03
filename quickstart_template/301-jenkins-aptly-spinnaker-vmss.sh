@@ -55,7 +55,7 @@ function install_az() {
 }
 
 # Set defaults
-artifacts_location="https://raw.githubusercontent.com/onlyloveyouever/azure-devops-utils/master/"
+artifacts_location="https://raw.githubusercontent.com/azure/azure-devops-utils/master/"
 artifacts_location_sas_token=""
 
 while [[ $# > 0 ]]
