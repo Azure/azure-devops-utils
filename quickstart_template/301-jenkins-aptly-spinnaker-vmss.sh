@@ -124,10 +124,9 @@ default_hal_config="/home/$jenkins_username/.hal/default"
 run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$jenkins_username"
 
 #install az cli and get-credentials from aks
-su sdpan > ~/x.txt
-az login --service-principal -u "591d345d-ce5d-4368-8442-07fbb9d93e26" -p "040b8146-3663-44ba-b6c7-cc724495f977" -t "72f988bf-86f1-41af-91ab-2d7cd011db47" > ~/a.txt
-az aks get-credentials --resource-group testaks2 --name aks101cluster -f /home/sdpan/.kube/config > ~/y.txt
-chmod 777 /home/sdpan/.kube/config
+az login --service-principal -u $app_id -p $app_key -t $tenant_id > ~/a.txt
+az aks get-credentials --resource-group $resource_group --name $clusterName -f /home/$jenkins_username/.kube/config > ~/y.txt
+chmod 777 /home/$jenkins_username/.kube/config
 
 #install kubectl
 curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
@@ -141,7 +140,7 @@ echo "$app_key" | hal config provider kubernetes account add my-k8s-v2-account \
   --provider-version v2 \
   --context $clusterName
   
-hal config provider kubernetes account edit my-k8s-v2-account --kubeconfig-file /home/sdpan/.kube/config
+hal config provider kubernetes account edit my-k8s-v2-account --kubeconfig-file /home/$jenkins_username/.kube/config
 
 hal config provider kubernetes enable
 hal config features edit --artifacts true
