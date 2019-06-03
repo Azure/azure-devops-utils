@@ -16,10 +16,12 @@ Arguments
   --vault_name|-vn                       [Required]: Vault used to store default Username/Password for deployed VMSS
   --storage_account_name|-san            [Required]: Storage account name used for front50
   --storage_account_key|-sak             [Required]: Storage account key used for front50
+  --aksClusterName|-aks                  [Required]: aksClusterName for deploy spinnaker
   --vm_fqdn|-vf                          [Required]: FQDN for the Jenkins instance hosting the Aptly repository
   --region|-r                                      : Region for VMSS created by Spinnaker, defaulted to westus
   --artifacts_location|-al                         : Url used to reference other scripts/artifacts.
   --sas_token|-st                                  : A sas token needed if the artifacts location is private.
+  
 EOF
 }
 
@@ -87,6 +89,8 @@ do
       storage_account_name="$1";;
     --storage_account_key|-sak)
       storage_account_key="$1";;
+    --aksClusterName|-aks)
+      storage_account_key="$1";;
     --region|-r)
       region="$1";;
     --vm_fqdn|-vf)
@@ -117,6 +121,7 @@ throw_if_empty storage_account_name $storage_account_name
 throw_if_empty storage_account_key $storage_account_key
 throw_if_empty vm_fqdn $vm_fqdn
 throw_if_empty region $region
+throw_if_empty aksClusterName $aksClusterName
 
 
 install_az
