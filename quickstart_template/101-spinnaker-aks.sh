@@ -16,11 +16,10 @@ Arguments
   --vault_name|-vn                       [Required]: Vault used to store default Username/Password for deployed VMSS
   --storage_account_name|-san            [Required]: Storage account name used for front50
   --storage_account_key|-sak             [Required]: Storage account key used for front50
-  --aksClusterName|-aks                  [Required]: aksClusterName for deploy spinnaker
+  --aks_cluster_name|-can                [Required]: aksClusterName for deploy spinnaker
   --region|-r                                      : Region for VMSS created by Spinnaker, defaulted to westus
   --artifacts_location|-al                         : Url used to reference other scripts/artifacts.
   --sas_token|-st                                  : A sas token needed if the artifacts location is private.
-  
 EOF
 }
 
@@ -84,8 +83,8 @@ do
       storage_account_name="$1";;
     --storage_account_key|-sak)
       storage_account_key="$1";;
-    --aksClusterName|-aks)
-      aksClusterName="$1";;
+    --aks_cluster_name|-can)
+      aks_cluster_name="$1";;
     --region|-r)
       region="$1";;
     --artifacts_location|-al)
@@ -113,7 +112,7 @@ throw_if_empty vault_name $vault_name
 throw_if_empty storage_account_name $storage_account_name
 throw_if_empty storage_account_key $storage_account_key
 throw_if_empty region $region
-throw_if_empty aksClusterName $aksClusterName
+throw_if_empty aks_cluster_name $aks_cluster_name
 
 #install az and hal
 install_az
@@ -121,7 +120,7 @@ run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_ac
 
 #get-credentials from aks
 az login --service-principal -u $app_id -p $app_key -t $tenant_id 
-az aks get-credentials --resource-group $resource_group --name $aksClusterName -f /home/$username/.kube/config 
+az aks get-credentials --resource-group $resource_group --name $aks_cluster_name -f /home/$username/.kube/config 
 chmod 777 /home/$username/.kube/config
 
 #install kubectl
@@ -149,13 +148,12 @@ hal config provider azure enable
 # Configure kubernetes provider for Spinnaker
 echo "$app_key" | hal config provider kubernetes account add my-k8s-v2-account \
   --provider-version v2 \
-  --context $aksClusterName
+  --context $aks_cluster_name
 hal config provider kubernetes account edit my-k8s-v2-account --kubeconfig-file /home/$username/.kube/config
 hal config provider kubernetes enable
 hal config features edit --artifacts true
 hal config deploy edit --type distributed --account-name my-k8s-v2-account
 
 # Deploy Spinnaker to aks
-hal config version edit --version 1.13.8
 sudo hal deploy apply
 hal deploy connect 
