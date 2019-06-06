@@ -157,3 +157,12 @@ hal config deploy edit --type distributed --account-name my-k8s-v2-account
 # Deploy Spinnaker to aks
 sudo hal deploy apply
 hal deploy connect 
+
+# Wait for Spinnaker services to be up before returning
+timeout=180
+echo "while !(nc -z localhost 8084) || !(nc -z localhost 9000); do sleep 1; done" | timeout $timeout bash
+return_value=$?
+if [ $return_value -ne 0 ]; then
+  >&2 echo "Failed to connect to Spinnaker within '$timeout' seconds."
+  exit $return_value
+fi
