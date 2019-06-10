@@ -9,7 +9,6 @@ Arguments
   --app_id|-ai                           [Required]: Service principal app id used by Spinnaker to dynamically manage resources
   --app_key|-ak                          [Required]: Service principal app key used by Spinnaker to dynamically manage resources
   --username|-u                          [Required]: vm username
-  --password|-p                          [Required]: vm password
   --tenant_id|-ti                        [Required]: Tenant id
   --subscription_id|-si                  [Required]: Subscription id
   --resource_group|-rg                   [Required]: Resource group containing your key vault and packer storage account
@@ -69,8 +68,6 @@ do
       app_key="$1";;
     --username|-u)
       username="$1";;
-    --password|-p)
-      password="$1";;
     --tenant_id|-ti)
       tenant_id="$1";;
     --subscription_id|-si)
@@ -104,7 +101,6 @@ done
 throw_if_empty app_id $app_id
 throw_if_empty app_key $app_key
 throw_if_empty username $username
-throw_if_empty password $password
 throw_if_empty tenant_id $tenant_id
 throw_if_empty subscription_id $subscription_id
 throw_if_empty resource_group $resource_group
