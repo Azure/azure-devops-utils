@@ -24,6 +24,16 @@ Arguments
 EOF
 }
 
+function throw_if_empty() {
+  local name="$1"
+  local value="$2"
+  if [ -z "$value" ]; then
+    echo "Parameter '$name' cannot be empty." 1>&2
+    print_usage
+    exit -1
+  fi
+}
+
 function run_util_script() {
   local script_path="$1"
   shift
