@@ -15,7 +15,7 @@ Arguments
   --vault_name|-vn                       [Required]: Vault used to store default Username/Password for deployed VMSS
   --storage_account_name|-san            [Required]: Storage account name used for front50
   --storage_account_key|-sak             [Required]: Storage account key used for front50
-  --aks_cluster_name|-can                [Required]: aksClusterName for deploy spinnaker
+  --aks_cluster_name|-acn                [Required]: AKS Cluster Name for deploy spinnaker
   --region|-r                                      : Region for VMSS created by Spinnaker, defaulted to westus
   --artifacts_location|-al                         : Url used to reference other scripts/artifacts.
   --sas_token|-st                                  : A sas token needed if the artifacts location is private.
@@ -80,7 +80,7 @@ do
       storage_account_name="$1";;
     --storage_account_key|-sak)
       storage_account_key="$1";;
-    --aks_cluster_name|-can)
+    --aks_cluster_name|-acn)
       aks_cluster_name="$1";;
     --region|-r)
       region="$1";;
