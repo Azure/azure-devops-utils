@@ -58,9 +58,9 @@ do
       app_id="$1";;
     --app_key|-ak)
       app_key="$1";;
-    --username|-ju)
+    --username|-u)
       username="$1";;
-    --password|-jp)
+    --password|-p)
       password="$1";;
     --tenant_id|-ti)
       tenant_id="$1";;
@@ -109,7 +109,7 @@ throw_if_empty vm_fqdn $vm_fqdn
 #installed on the vmss if there is no aks_cluster_name, otherwise installed on aks
 if [ -z "$aks_cluster_name" ]
 then
-      run_util_script "quickstart_template/301-jenkins-aptly-spinnaker-vmss.sh"  -ju "$username" -jp "$password" -ai "$app_id" -ak "$app_key" -ti "$tenant_id" -si "$subscription_id" -rg "$resource_group" -vn "$vault_name" -san "$storage_account_name" -sak "$storage_account_key" -vf "$vm_fqdn" -r "$region" -al "$artifacts_location" -st "$artifacts_location_sas_token"
+      run_util_script "quickstart_template/301-jenkins-aptly-spinnaker-vmss.sh"  -u "$username" -p "$password" -ai "$app_id" -ak "$app_key" -ti "$tenant_id" -si "$subscription_id" -rg "$resource_group" -vn "$vault_name" -san "$storage_account_name" -sak "$storage_account_key" -vf "$vm_fqdn" -r "$region" -al "$artifacts_location" -st "$artifacts_location_sas_token"
 else
       run_util_script "quickstart_template/101-spinnaker-aks.sh"  -u "$username" -ai "$app_id" -ak "$app_key" -ti "$tenant_id" -si "$subscription_id" -rg "$resource_group" -vn "$vault_name" -acn "$aks_cluster_name" -san "$storage_account_name" -sak "$storage_account_key" -r "$region" -al "$artifacts_location" -st "$artifacts_location_sas_token"
 fi
