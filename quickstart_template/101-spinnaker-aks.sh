@@ -114,8 +114,4 @@ throw_if_empty aks_cluster_name $aks_cluster_name
 install_az
 run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$username"
 
-#get-credentials from aks
-az login --service-principal -u $app_id -p $app_key -t $tenant_id 
-az aks get-credentials --resource-group $resource_group --name $aks_cluster_name -f /home/$username/.kube/config 
-chmod 777 /home/$username/.kube/config
 
