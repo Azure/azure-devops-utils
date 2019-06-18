@@ -163,25 +163,18 @@ i="0"
 
 while [ $i -lt 10 ]
 do
-    clouddriver_status=`kubectl get pods --namespace=spinnaker | grep clouddriver`
-    deck_status=`kubectl get pods --namespace=spinnaker | grep deck`
-    echo_status=`kubectl get pods --namespace=spinnaker | grep echo`
-    front50_status=`kubectl get pods --namespace=spinnaker | grep front50`
-    gate_status=`kubectl get pods --namespace=spinnaker | grep gate`
-    orca_status=`kubectl get pods --namespace=spinnaker | grep orca`
-    redis_status=`kubectl get pods --namespace=spinnaker | grep redis`
-    rosco_status=`kubectl get pods --namespace=spinnaker | grep rosco`
+    pod_status=`kubectl get pods --namespace=spinnaker`
 
-    if [[ $clouddriver_status =~ "1/1     Running" && $deck_status =~ "1/1     Running" && $echo_status =~ "1/1     Running" && $front50_status =~ "1/1     Running" && $gate_status =~ "1/1     Running" && $orca_status =~ "1/1     Running" && $redis_status =~ "1/1     Running" && $rosco_status =~ "1/1     Running" ]]
+    if [[ $pod_status != *"0/1"* ]]
     then
-        echo "deploying">~/logs.txt
+        touch log1.txt
         break
     else
-        echo "ghf">~/logs.txt
+        touch log2.txt
         i=$[$i+1]
-        sleep 60
+        sleep 30
     fi
 done
 
-echo "dfe">~/logs.txt
+touch log3.txt
 hal deploy connect
