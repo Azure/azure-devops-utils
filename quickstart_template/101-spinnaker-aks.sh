@@ -12,6 +12,7 @@ Arguments
   --tenant_id|-ti                        [Required]: Tenant id
   --subscription_id|-si                  [Required]: Subscription id
   --resource_group|-rg                   [Required]: Resource group containing your key vault and packer storage account
+  --aks_resource_group|-arg              [Required]: Resource group containing your aks
   --vault_name|-vn                       [Required]: Vault used to store default Username/Password for deployed VMSS
   --storage_account_name|-san            [Required]: Storage account name used for front50
   --storage_account_key|-sak             [Required]: Storage account key used for front50
@@ -74,6 +75,8 @@ do
       subscription_id="$1";;
     --resource_group|-rg)
       resource_group="$1";;
+    --aks_resource_group|-arg)
+      aks_resource_group="$1";;
     --vault_name|-vn)
       vault_name="$1";;
     --storage_account_name|-san)
@@ -104,6 +107,7 @@ throw_if_empty username $username
 throw_if_empty tenant_id $tenant_id
 throw_if_empty subscription_id $subscription_id
 throw_if_empty resource_group $resource_group
+throw_if_empty aks_resource_group $aks_resource_group
 throw_if_empty vault_name $vault_name
 throw_if_empty storage_account_name $storage_account_name
 throw_if_empty storage_account_key $storage_account_key
@@ -114,4 +118,42 @@ throw_if_empty aks_cluster_name $aks_cluster_name
 install_az
 run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$username"
 
+#get-credentials from aks
+az login --service-principal -u $app_id -p $app_key -t $tenant_id
+az aks get-credentials --resource-group $aks_resource_group --name $aks_cluster_name -f /home/$username/.kube/config
+chmod 777 /home/$username/.kube/config
 
+#install kubectl
+curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+sudo mv ./kubectl /usr/local/bin/kubectl
+
+# Configure Azure provider for Spinnaker
+echo "$app_key" | hal config provider azure account add my-azure-account \
+  --client-id "$app_id" \
+  --tenant-id "$tenant_id" \
+  --subscription-id "$subscription_id" \
+  --default-key-vault "$vault_name" \
+  --default-resource-group "$resource_group" \
+  --packer-resource-group "$resource_group" \
+  --app-key
+
+#change region if region not in eastus or westus
+if [ "$region" != eastus ] && [ "$region" != westus ]; then
+hal config provider azure account edit my-azure-account \
+  --regions "eastus","westus","$region"
+fi
+hal config provider azure enable
+
+# Configure kubernetes provider for Spinnaker
+echo "$app_key" | hal config provider kubernetes account add my-k8s-v2-account \
+  --provider-version v2 \
+  --context $aks_cluster_name
+hal config provider kubernetes account edit my-k8s-v2-account --kubeconfig-file /home/$username/.kube/config
+hal config provider kubernetes enable
+hal config features edit --artifacts true
+hal config deploy edit --type distributed --account-name my-k8s-v2-account
+
+# Deploy Spinnaker to aks
+sudo hal deploy apply
+hal deploy connect
