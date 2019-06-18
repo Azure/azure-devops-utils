@@ -171,7 +171,7 @@ do
     orca_status=`kubectl get pods --namespace=spinnaker | grep orca`
     redis_status=`kubectl get pods --namespace=spinnaker | grep redis`
     rosco_status=`kubectl get pods --namespace=spinnaker | grep rosco`
-    
+
     if [[ $clouddriver_status =~ "1/1     Running" && $deck_status =~ "1/1     Running" && $echo_status =~ "1/1     Running" && $front50_status =~ "1/1     Running" && $gate_status =~ "1/1     Running" && $orca_status =~ "1/1     Running" && $redis_status =~ "1/1     Running" && $rosco_status =~ "1/1     Running" ]]
     then
         echo "deploying">~/logs.txt
@@ -179,7 +179,7 @@ do
     else
         echo "ghf">~/logs.txt
         i=$[$i+1]
-        sleep 3600
+        sleep 60
     fi
 done
 
