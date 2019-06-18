@@ -158,4 +158,30 @@ hal config deploy edit --type distributed --account-name my-k8s-v2-account
 
 # Deploy Spinnaker to aks
 sudo hal deploy apply
+
+clouddriver_status=`kubectl get pods --namespace=spinnaker | grep clouddriver`
+deck_status=`kubectl get pods --namespace=spinnaker | grep deck`
+echo_status=`kubectl get pods --namespace=spinnaker | grep echo`
+front50_status=`kubectl get pods --namespace=spinnaker | grep front50`
+gate_status=`kubectl get pods --namespace=spinnaker | grep gate`
+orca_status=`kubectl get pods --namespace=spinnaker | grep orca`
+redis_status=`kubectl get pods --namespace=spinnaker | grep redis`
+rosco_status=`kubectl get pods --namespace=spinnaker | grep rosco`
+
+i="0"
+
+while [ $i -lt 10 ]
+do
+    if [[ $clouddriver_status =~ "1/1     Running" && $deck_status =~ "1/1     Running" && $echo_status =~ "1/1     Running" && $front50_status =~ "1/1     Running" && $gate_status =~ "1/1     Running" && $orca_status =~ "1/1     Running" && $redis_status =~ "1/1     Running" && $rosco_status =~ "1/1     Running" ]]
+    then
+        echo "deploying">~/logs.txt
+        break
+    else
+        echo "ghf">~/logs.txt
+        i=$[$i+1]
+        sleep 3600
+    fi
+done
+
+echo "dfe">~/logs.txt
 hal deploy connect
