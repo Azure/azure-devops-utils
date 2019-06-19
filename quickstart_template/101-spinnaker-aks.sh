@@ -168,6 +168,4 @@ if [ $? -ne 0 ]; then
   echo "Failed to connect to Spinnaker."
 else
   echo "Successfully connected to Spinnaker."
-  echo "Enter 'Ctrl-C' in your terminal to exit the connection in the background."
 fi
-echo "Edit your ~/.bash_login file and remove the 'Connect to Spinnaker' section if you do not want to auto-connect on login."
