@@ -159,22 +159,15 @@ hal config deploy edit --type distributed --account-name my-k8s-v2-account
 # Deploy Spinnaker to aks
 sudo hal deploy apply
 
-i="0"
-
-while [ $i -lt 10 ]
-do
-    pod_status=`kubectl get pods --namespace=spinnaker`
-
-    if [[ $pod_status != *"0/1"* ]]
-    then
-        touch log1.txt
-        break
-    else
-        touch log2.txt
-        i=$[$i+1]
-        sleep 30
-    fi
-done
-
-touch log3.txt
-hal deploy connect
+# Connect to Spinnaker
+echo "Connecting to Spinnaker..."
+hal deploy connect &>/dev/null &
+# Wait for connection
+echo "while !(nc -z localhost 8084) || !(nc -z localhost 9000); do sleep 1; done" | timeout 20 bash
+if [ $? -ne 0 ]; then
+  echo "Failed to connect to Spinnaker."
+else
+  echo "Successfully connected to Spinnaker."
+  echo "Enter 'Ctrl-C' in your terminal to exit the connection in the background."
+fi
+echo "Edit your ~/.bash_login file and remove the 'Connect to Spinnaker' section if you do not want to auto-connect on login."
