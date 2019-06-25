@@ -16,6 +16,7 @@ Arguments
   --storage_account_name|-san            [Required]: Storage account name used for front50
   --storage_account_key|-sak             [Required]: Storage account key used for front50
   --aks_cluster_name|-acn                [Required]: AKS Cluster Name for deploy spinnaker
+  --aks_resource_group|-arg              [Required]: Resource group containing your aks
   --region|-r                                      : Region for VMSS created by Spinnaker, defaulted to westus
   --artifacts_location|-al                         : Url used to reference other scripts/artifacts.
   --sas_token|-st                                  : A sas token needed if the artifacts location is private.
@@ -45,11 +46,13 @@ function run_util_script() {
 
 function install_az() {
   if !(command -v az >/dev/null); then
-    sudo apt-get update && sudo apt-get install -y libssl-dev libffi-dev python-dev
-    echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/azure-cli/ wheezy main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
-    sudo apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893
-    sudo apt-get install -y apt-transport-https
-    sudo apt-get -y update && sudo apt-get install -y azure-cli --allow-unauthenticated
+    sudo apt-get update
+    sudo apt-get install curl apt-transport-https lsb-release gnupg -y
+    curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc.gpg > /dev/null
+    AZ_REPO=$(lsb_release -cs)
+    echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
+    sudo apt-get update
+    sudo apt-get install azure-cli
   fi
 }
 
@@ -82,6 +85,8 @@ do
       storage_account_key="$1";;
     --aks_cluster_name|-acn)
       aks_cluster_name="$1";;
+    --aks_resource_group|-arg)
+      aks_resource_group="$1";;
     --region|-r)
       region="$1";;
     --artifacts_location|-al)
@@ -109,14 +114,15 @@ throw_if_empty storage_account_name $storage_account_name
 throw_if_empty storage_account_key $storage_account_key
 throw_if_empty region $region
 throw_if_empty aks_cluster_name $aks_cluster_name
+throw_if_empty aks_resource_group $aks_resource_group
 
 #install az and hal
 install_az
 run_util_script "spinnaker/install_halyard/install_halyard.sh" -san "$storage_account_name" -sak "$storage_account_key" -u "$username"
 
 #get-credentials from aks
-az login --service-principal -u $app_id -p $app_key -t $tenant_id 
-az aks get-credentials --resource-group $resource_group --name $aks_cluster_name -f /home/$username/.kube/config 
+az login --service-principal -u $app_id -p $app_key -t $tenant_id
+az aks get-credentials --resource-group $aks_resource_group --name $aks_cluster_name -f /home/$username/.kube/config
 chmod 777 /home/$username/.kube/config
 
 #install kubectl
@@ -137,7 +143,7 @@ echo "$app_key" | hal config provider azure account add my-azure-account \
 #change region if region not in eastus or westus
 if [ "$region" != eastus ] && [ "$region" != westus ]; then
 hal config provider azure account edit my-azure-account \
-  --regions "eastus","westus","$region" 
+  --regions "eastus","westus","$region"
 fi
 hal config provider azure enable
 
@@ -152,13 +158,14 @@ hal config deploy edit --type distributed --account-name my-k8s-v2-account
 
 # Deploy Spinnaker to aks
 sudo hal deploy apply
-hal deploy connect 
 
-# Wait for Spinnaker services to be up before returning
-timeout=180
-echo "while !(nc -z localhost 8084) || !(nc -z localhost 9000); do sleep 1; done" | timeout $timeout bash
-return_value=$?
-if [ $return_value -ne 0 ]; then
-  >&2 echo "Failed to connect to Spinnaker within '$timeout' seconds."
-  exit $return_value
+# Connect to Spinnaker
+echo "Connecting to Spinnaker..."
+hal deploy connect &>/dev/null &
+# Wait for connection
+echo "while !(nc -z localhost 8084) || !(nc -z localhost 9000); do sleep 1; done" | timeout 20 bash
+if [ $? -ne 0 ]; then
+  echo "Failed to connect to Spinnaker."
+else
+  echo "Successfully connected to Spinnaker."
 fi

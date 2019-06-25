@@ -17,11 +17,22 @@ Arguments
   --storage_account_name|-san            [Required]: Storage account name used for front50
   --storage_account_key|-sak             [Required]: Storage account key used for front50
   --aks_cluster_name|-acn                          : AKS ClusterName for deploy spinnaker
+  --aks_resource_group|-arg                        : Resource group containing your aks
   --vm_fqdn|-vf                          [Required]: FQDN for the Jenkins instance hosting the Aptly repository
   --region|-r                                      : Region for VMSS created by Spinnaker, defaulted to westus
   --artifacts_location|-al                         : Url used to reference other scripts/artifacts.
   --sas_token|-st                                  : A sas token needed if the artifacts location is private.
 EOF
+}
+
+function throw_if_empty() {
+  local name="$1"
+  local value="$2"
+  if [ -z "$value" ]; then
+    echo "Parameter '$name' cannot be empty." 1>&2
+    print_usage
+    exit -1
+  fi
 }
 
 function run_util_script() {
@@ -48,9 +59,9 @@ do
       app_id="$1";;
     --app_key|-ak)
       app_key="$1";;
-    --username|-ju)
+    --username|-u)
       username="$1";;
-    --password|-jp)
+    --password|-p)
       password="$1";;
     --tenant_id|-ti)
       tenant_id="$1";;
@@ -64,8 +75,10 @@ do
       storage_account_name="$1";;
     --storage_account_key|-sak)
       storage_account_key="$1";;
-    --aks_cluster_name|-can)
+    --aks_cluster_name|-acn)
       aks_cluster_name="$1";;
+    --aks_resource_group|-arg)
+      aks_resource_group="$1";;
     --region|-r)
       region="$1";;
     --vm_fqdn|-vf)
@@ -101,5 +114,5 @@ if [ -z "$aks_cluster_name" ]
 then
       run_util_script "quickstart_template/301-jenkins-aptly-spinnaker-vmss.sh"  -ju "$username" -jp "$password" -ai "$app_id" -ak "$app_key" -ti "$tenant_id" -si "$subscription_id" -rg "$resource_group" -vn "$vault_name" -san "$storage_account_name" -sak "$storage_account_key" -vf "$vm_fqdn" -r "$region" -al "$artifacts_location" -st "$artifacts_location_sas_token"
 else
-      run_util_script "quickstart_template/101-spinnaker-aks.sh"  -u "$username" -ai "$app_id" -ak "$app_key" -ti "$tenant_id" -si "$subscription_id" -rg "$resource_group" -vn "$vault_name" -acn "$aks_cluster_name" -san "$storage_account_name" -sak "$storage_account_key" -r "$region" -al "$artifacts_location" -st "$artifacts_location_sas_token"
+      run_util_script "quickstart_template/101-spinnaker-aks.sh"  -u "$username" -ai "$app_id" -ak "$app_key" -ti "$tenant_id" -si "$subscription_id" -rg "$resource_group" -vn "$vault_name" -acn "$aks_cluster_name" -arg "$aks_resource_group" -san "$storage_account_name" -sak "$storage_account_key" -r "$region" -al "$artifacts_location" -st "$artifacts_location_sas_token"
 fi
