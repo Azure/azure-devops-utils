@@ -9,17 +9,17 @@ Arguments
   --app_id|-ai                           [Required]: Service principal app id used by Spinnaker to dynamically manage resources
   --app_key|-ak                          [Required]: Service principal app key used by Spinnaker to dynamically manage resources
   --username|-u                          [Required]: username
-  --password|-p                          [Required]: password
   --tenant_id|-ti                        [Required]: Tenant id
   --subscription_id|-si                  [Required]: Subscription id
   --resource_group|-rg                   [Required]: Resource group containing your key vault and packer storage account
   --vault_name|-vn                       [Required]: Vault used to store default Username/Password for deployed VMSS
   --storage_account_name|-san            [Required]: Storage account name used for front50
   --storage_account_key|-sak             [Required]: Storage account key used for front50
-  --aks_cluster_name|-acn                          : AKS ClusterName for deploy spinnaker
-  --aks_resource_group|-arg                        : Resource group containing your aks
   --vm_fqdn|-vf                          [Required]: FQDN for the Jenkins instance hosting the Aptly repository
   --use_ssh_public_key|-uspk             [Required]: Use ssh public key
+  --jenkins_password|-jp                           : Jenkins password
+  --aks_cluster_name|-acn                          : AKS ClusterName for deploy spinnaker
+  --aks_resource_group|-arg                        : Resource group containing your aks
   --region|-r                                      : Region for VMSS created by Spinnaker, defaulted to westus
   --artifacts_location|-al                         : Url used to reference other scripts/artifacts.
   --sas_token|-st                                  : A sas token needed if the artifacts location is private.
@@ -62,8 +62,8 @@ do
       app_key="$1";;
     --username|-u)
       username="$1";;
-    --password|-p)
-      password="$1";;
+    --jenkins_password|-jp)
+      jenkins_password="$1";;
     --tenant_id|-ti)
       tenant_id="$1";;
     --subscription_id|-si)
@@ -109,14 +109,13 @@ throw_if_empty resource_group $resource_group
 throw_if_empty vault_name $vault_name
 throw_if_empty storage_account_name $storage_account_name
 throw_if_empty storage_account_key $storage_account_key
-throw_if_empty password $password
 throw_if_empty vm_fqdn $vm_fqdn
 throw_if_empty use_ssh_public_key $use_ssh_public_key
 
 #installed on the vmss if there is no aks_cluster_name, otherwise installed on aks
 if [ -z "$aks_cluster_name" ]
 then
-      run_util_script "quickstart_template/301-jenkins-aptly-spinnaker-vmss.sh"  -ju "$username" -jp "$password" -ai "$app_id" -ak "$app_key" -ti "$tenant_id" -si "$subscription_id" -rg "$resource_group" -vn "$vault_name" -san "$storage_account_name" -sak "$storage_account_key" -vf "$vm_fqdn" -r "$region" -al "$artifacts_location" -st "$artifacts_location_sas_token" -uspk "$use_ssh_public_key"
+      run_util_script "quickstart_template/301-jenkins-aptly-spinnaker-vmss.sh"  -ju "$username" -jp "$jenkins_password" -ai "$app_id" -ak "$app_key" -ti "$tenant_id" -si "$subscription_id" -rg "$resource_group" -vn "$vault_name" -san "$storage_account_name" -sak "$storage_account_key" -vf "$vm_fqdn" -r "$region" -al "$artifacts_location" -st "$artifacts_location_sas_token" -uspk "$use_ssh_public_key"
 else
       run_util_script "quickstart_template/101-spinnaker-aks.sh"  -u "$username" -ai "$app_id" -ak "$app_key" -ti "$tenant_id" -si "$subscription_id" -rg "$resource_group" -vn "$vault_name" -acn "$aks_cluster_name" -arg "$aks_resource_group" -san "$storage_account_name" -sak "$storage_account_key" -r "$region" -al "$artifacts_location" -st "$artifacts_location_sas_token" -uspk "$use_ssh_public_key"
 fi
