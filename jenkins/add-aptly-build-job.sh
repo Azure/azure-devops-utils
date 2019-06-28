@@ -42,7 +42,7 @@ job_display_name="Sample Aptly Job"
 job_description="A basic pipeline that builds a debian package and pushes it to an Aptly repository hosted on the Jenkins VM."
 repository_name="hello-karyon-rxnetty"
 artifacts_location="https://raw.githubusercontent.com/Azure/azure-devops-utils/master/"
-git_url="https://github.com/mybayern1974/hello-karyon-rxnetty.git"
+git_url="https://github.com/azure-devops/hello-karyon-rxnetty.git"
 
 while [[ $# > 0 ]]
 do

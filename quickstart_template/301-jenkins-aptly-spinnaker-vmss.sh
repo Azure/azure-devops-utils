@@ -17,6 +17,7 @@ Arguments
   --storage_account_name|-san            [Required]: Storage account name used for front50
   --storage_account_key|-sak             [Required]: Storage account key used for front50
   --vm_fqdn|-vf                          [Required]: FQDN for the Jenkins instance hosting the Aptly repository
+  --use_ssh_public_key|-uspk             [Required]: Use ssh public key
   --region|-r                                      : Region for VMSS created by Spinnaker, defaulted to westus
   --artifacts_location|-al                         : Url used to reference other scripts/artifacts.
   --sas_token|-st                                  : A sas token needed if the artifacts location is private.
@@ -79,6 +80,8 @@ do
       region="$1";;
     --vm_fqdn|-vf)
       vm_fqdn="$1";;
+    --use_ssh_public_key|-uspk)
+      use_ssh_public_key="$1";;
     --artifacts_location|-al)
       artifacts_location="$1";;
     --sas_token|-st)
@@ -104,6 +107,7 @@ throw_if_empty vault_name $vault_name
 throw_if_empty storage_account_name $storage_account_name
 throw_if_empty storage_account_key $storage_account_key
 throw_if_empty vm_fqdn $vm_fqdn
+throw_if_empty use_ssh_public_key $use_ssh_public_key
 throw_if_empty region $region
 
 default_hal_config="/home/$jenkins_username/.hal/default"
@@ -123,6 +127,7 @@ echo "$app_key" | hal config provider azure account add my-azure-account \
   --default-key-vault "$vault_name" \
   --default-resource-group "$resource_group" \
   --packer-resource-group "$resource_group" \
+  --useSshPublicKey "$use_ssh_public_key" \
   --app-key
 
 #change region if region not in eastus or westus
@@ -146,10 +151,8 @@ echo "$jenkins_password" | hal config ci jenkins master add Jenkins \
     --address "http://localhost:8082" \
     --username "$jenkins_username" \
     --password
-hal config ci jenkins enable
 
-# Deploy Spinnaker to local VM
-sudo hal deploy apply
+hal config ci jenkins enable
 
 run_util_script "jenkins/install_jenkins.sh" -jf "${vm_fqdn}" -al "${artifacts_location}" -st "${artifacts_location_sas_token}"
 
@@ -161,13 +164,19 @@ echo "Setting up initial user..."
 
 # Using single quote for username and password here to avoid dollar sign being recognized as start of variable
 echo "jenkins.model.Jenkins.instance.securityRealm.createAccount('$jenkins_username', '$jenkins_password')"  > addUser.groovy
+
 run_util_script "jenkins/run-cli-command.sh" -cif "addUser.groovy" -c "groovy ="
+
 rm "addUser.groovy"
 
 # Change the Jenkins port in order not to conflict with the Spinnaker front50 port
 port=8082
+
 sed -i -e "s/\(HTTP_PORT=\).*/\1$port/"  /etc/default/jenkins
+
 service jenkins restart
+
+sudo hal deploy apply
 
 # If redis is not started, start the redis-server
 netstat -tln | grep ":6379 "

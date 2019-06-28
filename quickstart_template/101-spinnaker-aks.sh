@@ -17,6 +17,7 @@ Arguments
   --storage_account_key|-sak             [Required]: Storage account key used for front50
   --aks_cluster_name|-acn                [Required]: AKS Cluster Name for deploy spinnaker
   --aks_resource_group|-arg              [Required]: Resource group containing your aks
+  --use_ssh_public_key|-uspk             [Required]: Use ssh public key
   --region|-r                                      : Region for VMSS created by Spinnaker, defaulted to westus
   --artifacts_location|-al                         : Url used to reference other scripts/artifacts.
   --sas_token|-st                                  : A sas token needed if the artifacts location is private.
@@ -87,6 +88,8 @@ do
       aks_cluster_name="$1";;
     --aks_resource_group|-arg)
       aks_resource_group="$1";;
+    --use_ssh_public_key|-uspk)
+      use_ssh_public_key="$1";;
     --region|-r)
       region="$1";;
     --artifacts_location|-al)
@@ -115,6 +118,7 @@ throw_if_empty storage_account_key $storage_account_key
 throw_if_empty region $region
 throw_if_empty aks_cluster_name $aks_cluster_name
 throw_if_empty aks_resource_group $aks_resource_group
+throw_if_empty use_ssh_public_key $use_ssh_public_key
 
 #install az and hal
 install_az
@@ -138,6 +142,7 @@ echo "$app_key" | hal config provider azure account add my-azure-account \
   --default-key-vault "$vault_name" \
   --default-resource-group "$resource_group" \
   --packer-resource-group "$resource_group" \
+  --useSshPublicKey "$use_ssh_public_key" \
   --app-key
 
 #change region if region not in eastus or westus
